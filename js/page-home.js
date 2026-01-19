@@ -1,0 +1,113 @@
+import { setActiveNav, loadTournament, esc } from "./util.js";
+import { getFB, watchAllMatches } from "./store-fb.js";
+import { firebaseReady } from "./firebase.js";
+
+setActiveNav("home");
+
+const FB = getFB();
+
+function badgeState(){
+  const el = document.getElementById("fbState");
+  if(!firebaseReady()){
+    el.className = "badge up";
+    el.textContent = "Firebase: not configured";
+  } else {
+    el.className = "badge done";
+    el.textContent = "Firebase: connected";
+  }
+}
+
+function renderStatic(t){
+  document.getElementById("tMeta").textContent = `${t.dates} • ${t.oversPerInnings} overs/innings • Powerplay ${t.powerplayOvers} overs • Max ${t.maxOversPerBowler} overs/bowler`;
+  const kpi = document.getElementById("kpi");
+  kpi.innerHTML = [
+    `<span class="pill"><b>${Object.values(t.groups).flat().length}</b> teams</span>`,
+    `<span class="pill"><b>${Object.keys(t.groups).length}</b> groups</span>`,
+    `<span class="pill"><b>${t.oversPerInnings}</b> overs/innings</span>`,
+    `<span class="pill">Powerplay: <b>${t.powerplayOvers}</b> overs</span>`,
+    `<span class="pill">Ball: <b>${esc(t.ball)}</b></span>`
+  ].join("");
+  const rules = [
+    `No LBW`,
+    `Tie → Super Over (repeat until result)`,
+    `Wide at umpire's discretion`,
+    `No-ball for front-foot`
+  ];
+  const rl = document.getElementById("rulesList");
+  rl.innerHTML = rules.map(r=>`<div class="item"><div class="left"><span class="tag">RULE</span><div>${esc(r)}</div></div></div>`).join("");
+}
+
+function renderFromMatches(t, docs){
+  // live: any LIVE, choose latest updated
+  const live = docs.filter(d=>d.status==="LIVE");
+  live.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+  const liveBox = document.getElementById("liveBox");
+
+  if(live.length===0){
+    liveBox.innerHTML = `<div class="muted small">No live match right now.</div>`;
+  } else {
+    const m = live[0];
+    const sum = m.summary || {};
+    liveBox.innerHTML = `
+      <div class="item">
+        <div class="left">
+          <span class="badge live">🔴 LIVE</span>
+          <div>
+            <div><b>${esc(m.a)} vs ${esc(m.b)}</b> <span class="muted small">• Group ${esc(m.group)} • ${esc(m.time)}</span></div>
+            <div class="muted small">${esc(sum.batting||m.a)}: <b>${esc(sum.scoreText||"0/0")}</b> <span class="muted">(${esc(sum.oversText||"0.0/10")})</span> • RR ${esc(sum.rr||0)}</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Live</a>
+          <a class="btn ghost" href="live.html?match=${encodeURIComponent(m.matchId)}">Ball-by-ball</a>
+        </div>
+      </div>
+    `;
+  }
+
+  // upcoming: earliest by matchId order but only UPCOMING
+  const upcoming = docs.filter(d=>d.status!=="COMPLETED" && d.status!=="LIVE");
+  upcoming.sort((a,b)=> a.matchId.localeCompare(b.matchId));
+  const upEl = document.getElementById("upcomingList");
+  upEl.innerHTML = upcoming.slice(0,10).map(m=>`
+    <div class="item">
+      <div class="left">
+        <span class="badge up">🕒 UPCOMING</span>
+        <div>
+          <div><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
+          <div class="muted small">Group ${esc(m.group)} • ${esc(m.time)} • Match ${esc(m.matchId)}</div>
+        </div>
+      </div>
+      <a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
+    </div>
+  `).join("") || `<div class="muted small">No upcoming fixtures found.</div>`;
+
+  const recent = docs.filter(d=>d.status==="COMPLETED");
+  recent.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+  const rEl = document.getElementById("recentList");
+  rEl.innerHTML = recent.slice(0,6).map(m=>`
+    <div class="item">
+      <div class="left">
+        <span class="badge done">✅ DONE</span>
+        <div>
+          <div><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
+          <div class="muted small">Match ${esc(m.matchId)} • Group ${esc(m.group)} • ${esc(m.time)}</div>
+        </div>
+      </div>
+      <a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">Summary</a>
+    </div>
+  `).join("") || `<div class="muted small">No completed matches yet.</div>`;
+}
+
+(async function(){
+  badgeState();
+  const t = await loadTournament();
+  renderStatic(t);
+
+  if(!FB){
+    document.getElementById("liveBox").textContent = "Firebase not configured. Configure js/firebase-config.js and redeploy.";
+    return;
+  }
+
+  watchAllMatches(FB, (docs)=> renderFromMatches(t, docs));
+})();

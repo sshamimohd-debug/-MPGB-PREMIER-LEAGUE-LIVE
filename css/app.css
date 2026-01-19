@@ -1,0 +1,64 @@
+
+/* ===== Scorer Setup Wizard (mobile operator) ===== */
+.wiz{ position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+  padding:16px; background: radial-gradient(1200px 700px at 30% 10%, rgba(30,144,255,.25), transparent 60%),
+              radial-gradient(900px 600px at 80% 90%, rgba(255,165,0,.18), transparent 60%),
+              rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+}
+.wiz.hidden{ display:none; }
+.wizCard{ width:min(560px, 96vw); border-radius:22px; padding:16px; color:#e9f1ff;
+  background: linear-gradient(180deg, rgba(18,26,48,.92), rgba(10,15,28,.92));
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+  transform: translateY(8px); animation: wizIn .25s ease-out forwards;
+}
+@keyframes wizIn{ to { transform: translateY(0); } }
+.wizTop{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;}
+.wizTitle{ font-size:18px; font-weight:800; letter-spacing:.2px;}
+.wizStep{ font-size:12px; opacity:.8; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.06);}
+
+.wizBody{ margin-top:6px; }
+.wizPane{ animation: paneIn .22s ease-out; }
+@keyframes paneIn{ from{ opacity:.4; transform: translateY(8px);} to{opacity:1; transform:none;} }
+.wizH{ font-size:16px; font-weight:800; margin:6px 0 4px;}
+.wizP{ font-size:13px; opacity:.85; margin:0 0 12px;}
+
+.wizGrid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+.wizBtn{ height:46px; border-radius:14px; border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06); color:#eaf2ff; font-weight:700; cursor:pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease;
+}
+.wizBtn:active{ transform: scale(.98); }
+.wizBtn.primary{ background: linear-gradient(90deg, rgba(30,144,255,.95), rgba(0,200,255,.85)); border-color: transparent; }
+.wizBtn.ghost{ background: transparent; }
+.wizBtn.sel{ outline:2px solid rgba(255,165,0,.8); border-color: rgba(255,165,0,.35); background: rgba(255,165,0,.10); }
+
+.wizRow{ display:grid; grid-template-columns: 120px 1fr; gap:10px; align-items:center; margin:10px 0;}
+.wizRow label{ font-size:13px; opacity:.85;}
+.wizRow select{ height:44px; border-radius:12px; border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.25); color:#eaf2ff; padding:0 10px;
+}
+
+.wizSubH{ font-size:13px; font-weight:800; opacity:.9; padding-top:6px; }
+
+.wizFooter{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; }
+.wizDots{ display:flex; gap:6px; align-items:center; justify-content:center; flex:1; }
+.wizDots .d{ width:8px; height:8px; border-radius:999px; background: rgba(255,255,255,.18); }
+.wizDots .d.on{ background: rgba(255,165,0,.95); box-shadow: 0 0 14px rgba(255,165,0,.45); }
+
+.wizList{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.wizPill{ height:42px; border-radius:999px; border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center;
+  font-weight:700; cursor:pointer; user-select:none;
+}
+.wizPill.on{ background: rgba(30,144,255,.18); border-color: rgba(30,144,255,.45); }
+
+.wizBigOk{ margin-top:10px; padding:14px; border-radius:16px; background: rgba(0,255,160,.10);
+  border:1px solid rgba(0,255,160,.22); font-weight:800; text-align:center;
+}
+
+@media (max-width: 420px){
+  .wizRow{ grid-template-columns: 1fr; }
+  .wizRow label{ margin-bottom:4px; }
+  .wizList{ grid-template-columns:1fr; }
+}
