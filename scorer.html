@@ -57,49 +57,60 @@
     <hr class="sep"/>
 
     <div class="grid cols2">
-      <div class="card">
-        <div class="h1" style="font-size:16px">Ball input <span id="freeHitBadge" class="freeHitBadge" style="display:none">FREE HIT</span></div>
-        <div class="muted small">Striker/Non-striker/Bowler select karo, fir ball log karo.</div>
+      <div class="card scorerPanel">
+        <div class="row wrap" style="align-items:flex-end; justify-content:space-between">
+          <div>
+            <div class="h1" style="font-size:16px">Scoring Pad <span id="freeHitBadge" class="freeHitBadge" style="display:none">FREE HIT</span></div>
+            <div class="muted small">Run buttons ek touch me • Extras chips • Wicket confirm</div>
+          </div>
+          <button class="btn ghost small" id="undoBall" type="button">↶ Undo</button>
+        </div>
         <hr class="sep"/>
 
-        <div class="grid" style="gap:10px">
-          <div>
-            <div class="muted small">Striker</div>
-            <select id="batter" class="input">
-              <option value="">Select striker…</option>
-            </select>
+        <!-- Player selectors (collapsible to reduce scrolling) -->
+        <details class="card" style="padding:12px; margin:0 0 10px 0">
+          <summary class="muted small" style="cursor:pointer; list-style:none; font-weight:800">Change Striker / Non-striker / Bowler</summary>
+          <div class="grid" style="gap:10px; margin-top:10px">
+            <div>
+              <div class="muted small">Striker</div>
+              <select id="batter" class="input">
+                <option value="">Select striker…</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="muted small">Non-striker</div>
+              <select id="nonStriker" class="input">
+                <option value="">Select non-striker…</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="muted small">Bowler</div>
+              <select id="bowler" class="input">
+                <option value="">Select bowler…</option>
+              </select>
+            </div>
           </div>
+        </details>
 
-          <div>
-            <div class="muted small">Non-striker</div>
-            <select id="nonStriker" class="input">
-              <option value="">Select non-striker…</option>
-            </select>
-          </div>
+        <!-- Runs keypad (premium, no scrolling) -->
+        <div class="runGrid">
+          <button class="btn ghost runBtn" data-run="0">0</button>
+          <button class="btn ghost runBtn" data-run="1">1</button>
+          <button class="btn ghost runBtn" data-run="2">2</button>
+          <button class="btn ghost runBtn" data-run="3">3</button>
+          <button class="btn ghost runBtn four" data-run="4">4</button>
+          <button class="btn ghost runBtn six" data-run="6">6</button>
+        </div>
 
-          <div>
-            <div class="muted small">Bowler</div>
-            <select id="bowler" class="input">
-              <option value="">Select bowler…</option>
-            </select>
-          </div>
-
-          <div class="grid cols2">
-            <button class="btn ghost" data-run="0">0</button>
-            <button class="btn ghost" data-run="1">1</button>
-            <button class="btn ghost" data-run="2">2</button>
-            <button class="btn ghost" data-run="3">3</button>
-            <button class="btn ghost" data-run="4">4</button>
-            <button class="btn ghost" data-run="6">6</button>
-
-            <button class="btn ghost" data-extra="wd">Wide</button>
-            <button class="btn ghost" data-extra="nb">No ball</button>
-            <button class="btn ghost" data-extra="bye">Bye</button>
-            <button class="btn ghost" data-extra="lb">Leg bye</button>
-            <button class="btn danger" data-wicket="1">Wicket</button>
-          </div>
-
-          <button class="btn small" id="undoBall">Undo last ball</button>
+        <!-- Extras (chips) -->
+        <div class="chipRow" aria-label="Extras">
+          <button class="xChip" data-extra="wd" type="button">WD</button>
+          <button class="xChip" data-extra="nb" type="button">NB</button>
+          <button class="xChip" data-extra="bye" type="button">B</button>
+          <button class="xChip" data-extra="lb" type="button">LB</button>
+          <button class="xChip" data-wicket="1" type="button" style="border-color:rgba(255,80,90,.45); background:rgba(255,80,90,.10)">Wicket</button>
         </div>
       </div>
 

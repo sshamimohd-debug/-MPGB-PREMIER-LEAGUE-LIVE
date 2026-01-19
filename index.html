@@ -37,77 +37,71 @@
 </div>
 
 <div class="container">
-  <div class="grid cols3">
-    <div class="card">
-      <div class="h1">Quick Start</div>
-      <div class="muted small">Use this app for fixtures, live scores, points and official PDFs.</div>
-      <div class="sep"></div>
-      <div class="grid cols2">
-        <a class="btn" href="schedule.html">View Schedule</a>
-        <a class="btn" href="points.html">Points Table</a>
-        <a class="btn ghost" href="rules.html">Rules</a>
-        <a class="btn ghost" href="admin.html">Scorer/Admin</a>
+  <!-- Premium Hero / Dashboard -->
+  <div class="heroCard">
+    <div class="row wrap" style="justify-content:space-between; align-items:flex-start; gap:12px">
+      <div>
+        <div class="h1" style="font-size:20px; margin:0">MPGB Premier League</div>
+        <div class="muted small" id="tMeta">Loading…</div>
       </div>
-      <div class="sep"></div>
-      <div class="muted small">
-        Live updates are powered by Firebase (public read-only). Scorers must sign-in in Admin.
-      </div>
+      <span class="badge up" id="fbState">Firebase: not configured</span>
     </div>
+    <div class="sep"></div>
+    <div class="grid cols2" style="gap:10px">
+      <a class="btn" href="schedule.html">Fixtures</a>
+      <a class="btn" href="points.html">Points</a>
+      <a class="btn ghost" href="teams.html">Teams</a>
+      <a class="btn ghost" href="admin.html">Scorer/Admin</a>
+    </div>
+    <div class="sep"></div>
+    <div class="kpi" id="kpi"></div>
 
-    <div class="card">
-      <div class="row">
-        <div>
-          <div class="h1">Tournament</div>
-          <div class="muted small" id="tMeta">Loading…</div>
-        </div>
-        <span class="badge up" id="fbState">Firebase: not configured</span>
-      </div>
-      <div class="kpi" id="kpi"></div>
+    <details class="card" style="padding:12px; margin:12px 0 0 0">
+      <summary class="muted small" style="cursor:pointer; list-style:none; font-weight:850">Official PDFs & Rules (tap to open)</summary>
       <div class="sep"></div>
       <div class="muted small">Official PDFs:</div>
-      <div class="kpi">
+      <div class="kpi" style="margin-top:8px">
         <a class="pill" href="docs/IOM_02.01.2026_MPGB Premier League.pdf" target="_blank" rel="noopener">IOM 02.01.2026</a>
         <a class="pill" href="docs/MPGB_Premier_League_Revised_Schedule.pdf" target="_blank" rel="noopener">Revised Schedule 03.01.2026</a>
+        <a class="pill" href="rules.html">Full Rules</a>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="h1">Important Rules</div>
-      <div class="list" id="rulesList"></div>
       <div class="sep"></div>
-      <a class="btn ghost" href="rules.html">Read full rules</a>
-    </div>
+      <div class="muted small">Important rules (quick):</div>
+      <div class="list" id="rulesList"></div>
+    </details>
   </div>
 
+  <!-- Live + Upcoming (Cricbuzz-like) -->
   <div class="grid cols2" style="margin-top:14px">
     <div class="card">
-      <div class="row wrap">
+      <div class="row wrap" style="justify-content:space-between">
         <div>
-          <div class="h1">🔴 Live Now</div>
-          <div class="muted small">If scoring is active, it will appear here.</div>
+          <div class="h1" style="margin:0">🔴 Live Now</div>
+          <div class="muted small">Live match yahin दिखेगा.</div>
         </div>
+        <a class="btn ghost" href="live.html">Open Live</a>
       </div>
       <div class="sep"></div>
       <div id="liveBox" class="muted small">Loading…</div>
     </div>
 
     <div class="card">
-      <div class="row wrap">
+      <div class="row wrap" style="justify-content:space-between">
         <div>
-          <div class="h1">Upcoming</div>
-          <div class="muted small">Next fixtures from the official revised schedule.</div>
+          <div class="h1" style="margin:0">Upcoming</div>
+          <div class="muted small">Next fixtures</div>
         </div>
-        <a class="btn ghost" href="schedule.html">All fixtures</a>
+        <a class="btn ghost" href="schedule.html">All</a>
       </div>
       <div class="sep"></div>
       <div class="list" id="upcomingList"><div class="muted small">Loading…</div></div>
       <div class="sep"></div>
-      <div class="h1" style="font-size:16px">Recent</div>
+      <div class="h1" style="font-size:16px; margin:0">Recent</div>
       <div class="list" id="recentList"><div class="muted small">—</div></div>
     </div>
   </div>
 
-  <div class="footer-note">Offline-ready UI • Real-time via Firebase • Works on GitHub Pages</div>
+  <div class="footer-note">Premium mobile UI • Real-time via Firebase • Offline-ready</div>
 </div>
 
 <script type="module" src="js/page-home.js"></script>
