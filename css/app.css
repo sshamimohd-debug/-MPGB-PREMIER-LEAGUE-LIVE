@@ -62,3 +62,82 @@
   .wizRow label{ margin-bottom:4px; }
   .wizList{ grid-template-columns:1fr; }
 }
+
+/* =========================
+   Premium Mobile Layout (UI only)
+   ========================= */
+
+.heroCard{
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:14px;
+  background:
+    radial-gradient(900px 360px at 10% -15%, rgba(106,167,255,.22), rgba(0,0,0,0) 60%),
+    radial-gradient(700px 300px at 90% 0%, rgba(0,255,160,.10), rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+}
+
+.heroTitle{ font-size:18px; font-weight:900; letter-spacing:.2px; }
+.heroSub{ font-size:12px; opacity:.8; margin-top:4px; }
+
+.quickGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
+.quickGrid .btn{ height:46px; border-radius:16px; }
+
+/* Schedule: mobile match cards */
+.matchCard{
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px;
+  background: rgba(255,255,255,.03);
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+.mcL{ min-width:68px; }
+.mcId{ display:inline-flex; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); font-weight:800; font-size:12px; }
+.mcTime{ font-size:12px; opacity:.8; margin-top:6px; }
+.mcMid{ flex:1; }
+.mcTeams{ font-weight:900; line-height:1.1; }
+.mcMeta{ font-size:12px; opacity:.78; margin-top:6px; }
+.mcR{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+
+.groupSticky{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding:10px 0 8px;
+  background: linear-gradient(180deg, rgba(7,11,22,.92), rgba(7,11,22,.55));
+  backdrop-filter: blur(10px);
+}
+
+/* Scorer: premium keypad */
+.scorerShell{ display:grid; gap:12px; }
+
+.scorerKeypad{
+  position: sticky;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 60;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:12px;
+  background: linear-gradient(180deg, rgba(18,26,48,.92), rgba(10,15,28,.92));
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+}
+
+.runGrid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+.runBtn{ height:54px; border-radius:18px; font-weight:900; font-size:18px; }
+.runBtn.four{ border-color: rgba(106,167,255,.5); }
+.runBtn.six{ border-color: rgba(0,255,160,.35); }
+
+.chipRow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.xChip{ height:40px; padding:0 12px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); font-weight:800; }
+.xChip:active{ transform: scale(.98); }
+
+.scorerActions{ display:flex; gap:10px; margin-top:10px; }
+.scorerActions .btn{ height:46px; border-radius:16px; flex:1; }
+
+@media (max-width: 520px){
+  .grid.cols2{ grid-template-columns: 1fr; }
+  #scorerLiveChip{ min-width: unset !important; width:100%; }
+}
+
