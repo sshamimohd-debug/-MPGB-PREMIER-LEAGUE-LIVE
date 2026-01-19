@@ -33,41 +33,39 @@ function render(t, docs, active){
   const {byGroup, groupsToShow} = groupMatches(t, docs, active);
   const wrap = document.getElementById("scheduleWrap");
 
-  const groupCards = groupsToShow.map(g=>{
-    const rows = byGroup[g].map(m=>{
-      const st = fmtStatus(m.status);
-      const action = m.status==="LIVE"
-        ? `<a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Live</a>`
-        : `<a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">${m.status==="COMPLETED"?"Summary":"Open"}</a>`;
-      return `
-      <tr>
-        <td><span class="tag">${esc(m.matchId)}</span></td>
-        <td>Group ${esc(m.group)}</td>
-        <td><b>${esc(m.time||"-")}</b></td>
-        <td><b>${esc(m.a||"-")}</b></td>
-        <td><b>${esc(m.b||"-")}</b></td>
-        <td><span class="badge ${st.cls}">${st.text}</span></td>
-        <td>${action}</td>
-      </tr>`;
-    }).join("");
+  // Mobile-first card list (Cricbuzz style). Keep data flow same.
+  const matchCard = (m, labelOverride="")=>{
+    const st = fmtStatus(m.status);
+    const href = `summary.html?match=${encodeURIComponent(m.matchId)}`;
+    const right = (m.status==="LIVE") ? `<span class="badge live">LIVE</span>` : `<span class="badge ${st.cls}">${st.text}</span>`;
+    const when = esc(m.time||"-");
+    const label = labelOverride || (m.group ? `Group ${esc(m.group)}` : "");
+    const a = esc(m.a||"TBD"), b = esc(m.b||"TBD");
+    return `
+      <a class="matchCard" href="${href}" style="text-decoration:none">
+        <div class="mcTop">
+          <div class="mcLeft">
+            <div class="mcId"><span class="tag">${esc(m.matchId)}</span> <span class="mcLbl">${label}</span></div>
+            <div class="mcTeams"><b>${a}</b> <span class="muted">vs</span> <b>${b}</b></div>
+            <div class="mcMeta muted small">🕒 ${when}</div>
+          </div>
+          <div class="mcRight">${right}</div>
+        </div>
+      </a>`;
+  };
 
+  const groupCards = groupsToShow.map(g=>{
+    const list = (byGroup[g]||[]).map(m=> matchCard(m, `Group ${esc(g)}`)).join("");
     return `
       <div class="card" style="margin-top:14px">
-        <div class="row wrap">
+        <div class="row wrap" style="justify-content:space-between">
           <div>
             <div class="h1" style="font-size:18px">Group ${esc(g)}</div>
             <div class="muted small">${byGroup[g].length} matches</div>
           </div>
         </div>
         <div class="sep"></div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Match</th><th>Group</th><th>Time</th><th>Team A</th><th>Team B</th><th>Status</th><th></th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="mcList">${list || `<div class="muted small">No matches</div>`}</div>
       </div>`;
   }).join("");
 
@@ -76,41 +74,21 @@ function render(t, docs, active){
   const ko = (docs||[]).filter(m=> !knownGroups.has(String(m.group||"")) );
   ko.sort((a,b)=> String(a.matchId||"").localeCompare(String(b.matchId||"")) );
   const koCard = ko.length? (()=>{
-    const rows = ko.map(m=>{
-      const st = fmtStatus(m.status);
+    const list = ko.map(m=>{
       const label = m.label || (m.stage==="SF"?"Semi Final": m.stage==="F"?"Final": (m.stage||"Knockout"));
-      const action = m.status==="LIVE"
-        ? `<a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Live</a>`
-        : `<a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">${m.status==="COMPLETED"?"Summary":"Open"}</a>`;
-      return `
-      <tr>
-        <td><span class="tag">${esc(m.matchId)}</span></td>
-        <td>${esc(label)}</td>
-        <td><b>${esc(m.time||"-")}</b></td>
-        <td><b>${esc(m.a||"TBD")}</b></td>
-        <td><b>${esc(m.b||"TBD")}</b></td>
-        <td><span class="badge ${st.cls}">${st.text}</span></td>
-        <td>${action}</td>
-      </tr>`;
+      return matchCard(m, esc(label));
     }).join("");
 
     return `
       <div class="card" style="margin-top:14px">
-        <div class="row wrap">
+        <div class="row wrap" style="justify-content:space-between">
           <div>
             <div class="h1" style="font-size:18px">Knockouts</div>
             <div class="muted small">${ko.length} matches</div>
           </div>
         </div>
         <div class="sep"></div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Match</th><th>Stage</th><th>Time</th><th>Team A</th><th>Team B</th><th>Status</th><th></th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="mcList">${list}</div>
       </div>`;
   })() : "";
 
