@@ -22,3 +22,55 @@ export function qs(){
 export function idHash(s){
   return (s||"").toString().trim();
 }
+
+// ----------------------------
+// Match context helpers (keeps Scorecard/Live tabs in-sync)
+// ----------------------------
+const LAST_MATCH_KEY = "mpgb_last_match";
+
+export function persistLastMatchId(matchId){
+  try{
+    const id = (matchId || "").toString().trim();
+    if(id) localStorage.setItem(LAST_MATCH_KEY, id);
+  }catch(e){}
+}
+
+export function getLastMatchId(){
+  try{ return (localStorage.getItem(LAST_MATCH_KEY) || "").toString().trim(); }
+  catch(e){ return ""; }
+}
+
+// Preferred match id resolution order:
+// 1) URL ?match=
+// 2) persisted last match
+// 3) fallback (default: A1)
+export function preferredMatchId(fallback="A1"){
+  const q = qs().get("match");
+  const saved = getLastMatchId();
+  return (q || saved || fallback).toString().trim();
+}
+
+// Rewrite bottom tab links so they keep the current match context.
+// Works on pages that have the bottomNav markup.
+export function wireBottomNav(matchId){
+  try{
+    const id = (matchId || "").toString().trim();
+    if(!id) return;
+    const map = {
+      live: `live.html?match=${encodeURIComponent(id)}`,
+      scorecard: `scorecard.html?match=${encodeURIComponent(id)}`
+    };
+    const apply = ()=>{
+      document.querySelectorAll('.bottomNav a[data-nav]')
+        .forEach(a=>{
+          const k = a.getAttribute('data-nav');
+          if(map[k]) a.setAttribute('href', map[k]);
+        });
+    };
+
+    // Some pages load their module script before rendering bottomNav markup.
+    // In that case, defer link rewriting until DOM is ready.
+    if(document.querySelector('.bottomNav')) apply();
+    else window.addEventListener('DOMContentLoaded', apply, {once:true});
+  }catch(e){}
+}

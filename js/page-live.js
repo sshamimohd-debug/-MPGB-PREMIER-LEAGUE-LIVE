@@ -1,10 +1,12 @@
-import { setActiveNav, qs, esc } from "./util.js";
+import { setActiveNav, preferredMatchId, persistLastMatchId, wireBottomNav, esc } from "./util.js";
 import { getFB, watchMatch } from "./store-fb.js";
 import { renderScoreLine, renderCommentary } from "./renderers.js";
 
-setActiveNav("home");
+setActiveNav("live");
 const FB = getFB();
-const matchId = qs().get("match") || "A1";
+const matchId = preferredMatchId("A1");
+persistLastMatchId(matchId);
+wireBottomNav(matchId);
 
 const summaryUrl = `summary.html?match=${encodeURIComponent(matchId)}`;
 const scorecardUrl = `scorecard.html?match=${encodeURIComponent(matchId)}`;

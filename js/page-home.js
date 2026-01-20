@@ -1,4 +1,4 @@
-import { setActiveNav, loadTournament, esc } from "./util.js";
+import { setActiveNav, loadTournament, esc, persistLastMatchId } from "./util.js";
 import { getFB, watchAllMatches } from "./store-fb.js";
 import { firebaseReady } from "./firebase.js";
 
@@ -40,6 +40,19 @@ function renderStatic(t){
 function renderFromMatches(t, docs){
   // Render list using Live / Upcoming / Completed tabs (mobile app style)
   window.__HOME_MATCHES__ = docs || [];
+  // Keep other tabs (Live/Scorecard) in-sync even when user opens them
+  // from bottom navigation without selecting a match.
+  try{
+    const all = window.__HOME_MATCHES__;
+    const pickLive = all.filter(m=>m.status==='LIVE')
+      .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
+    const pickUp = all.filter(m=>m.status!=='LIVE' && m.status!=='COMPLETED')
+      .sort((a,b)=> (a.matchId||'').localeCompare(b.matchId||''))[0];
+    const pickDone = all.filter(m=>m.status==='COMPLETED')
+      .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
+    const best = pickLive || pickUp || pickDone;
+    if(best?.matchId) persistLastMatchId(best.matchId);
+  }catch(e){}
   renderHomeTab(window.__HOME_ACTIVE_TAB__ || "LIVE");
 }
 
