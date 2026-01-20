@@ -209,3 +209,102 @@ body.modalOpen{ overflow:hidden; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
 }
 
+/* =========================
+   Home: Matches tabs (CREX/Cricbuzz style)
+   ========================= */
+
+.matchesCard{ overflow:hidden; }
+
+.segTabs{
+  display:flex;
+  gap:8px;
+  padding:10px;
+  margin-top:10px;
+  border-radius:999px;
+  border:1px solid rgba(11,18,32,.06);
+  background: rgba(255,255,255,.70);
+  box-shadow: var(--shadow2);
+}
+
+.segBtn{
+  flex:1;
+  height:38px;
+  border-radius:999px;
+  border:1px solid rgba(11,18,32,.08);
+  background: rgba(255,255,255,.85);
+  font-weight:900;
+  font-size:13px;
+  cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.segBtn:active{ transform: scale(.98); }
+.segBtn.active{
+  border-color: rgba(31,107,255,.55);
+  background: linear-gradient(135deg, rgba(31,107,255,.95), rgba(14,165,233,.88));
+  color:#fff;
+  box-shadow: 0 12px 24px rgba(31,107,255,.18);
+}
+
+.mRow{
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+  border-radius:18px;
+  border:1px solid rgba(11,18,32,.06);
+  background: rgba(255,255,255,.92);
+  box-shadow: var(--shadow2);
+}
+
+.mL{ flex:1; min-width:0; }
+
+.mTop{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+
+.mDot{ width:8px; height:8px; border-radius:999px; display:inline-block; }
+.mDot.live{ background: var(--live); box-shadow: 0 0 0 3px rgba(225,29,72,.14); }
+.mDot.up{ background: var(--warn); box-shadow: 0 0 0 3px rgba(245,158,11,.16); }
+.mDot.done{ background: var(--ok); box-shadow: 0 0 0 3px rgba(22,163,74,.14); }
+
+.mSt{ font-size:12px; font-weight:950; letter-spacing:.2px; }
+.mSt.live{ color: var(--live); }
+.mSt.up{ color: var(--warn); }
+.mSt.done{ color: var(--ok); }
+
+.mMeta{ font-size:12px; color:var(--muted); }
+
+.mTeams{ font-size:14px; font-weight:900; line-height:1.15; }
+.mTeams .vs{ font-weight:800; opacity:.7; margin:0 6px; }
+
+.mSub{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.35; }
+.mSub.done{ color: rgba(22,163,74,.95); font-weight:800; }
+
+.mActions{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; justify-content:center; }
+.mBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:36px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid rgba(11,18,32,.10);
+  background: rgba(255,255,255,.90);
+  font-weight:900;
+}
+.mBtn.ghost{ background: rgba(241,245,255,.95); border-color: rgba(31,107,255,.18); }
+
+@media (max-width: 420px){
+  .segTabs{ padding:8px; }
+  .segBtn{ height:36px; font-size:12px; }
+  .mRow{ padding:10px; }
+  .mActions{ gap:6px; }
+  .mBtn{ height:34px; }
+}
+
