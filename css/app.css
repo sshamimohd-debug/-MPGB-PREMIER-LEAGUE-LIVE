@@ -1,13 +1,19 @@
 
 /* ===== Scorer Setup Wizard (mobile operator) ===== */
 .wiz{ position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
-  padding:16px; background: radial-gradient(1200px 700px at 30% 10%, rgba(30,144,255,.25), transparent 60%),
-              radial-gradient(900px 600px at 80% 90%, rgba(255,165,0,.18), transparent 60%),
-              rgba(0,0,0,.55);
-  backdrop-filter: blur(8px);
+  padding:16px;
+  /* Darker overlay so underlying page doesn't show as grey side panels on wide screens */
+  background:
+    radial-gradient(1200px 700px at 30% 10%, rgba(30,144,255,.14), transparent 62%),
+    radial-gradient(900px 600px at 80% 90%, rgba(255,165,0,.10), transparent 62%),
+    rgba(0,0,0,.78);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  overflow:auto;
+  overscroll-behavior: contain;
 }
 .wiz.hidden{ display:none; }
-.wizCard{ width:min(560px, 96vw); border-radius:22px; padding:16px; color:#e9f1ff;
+.wizCard{ width:min(560px, 96vw); max-height: min(90vh, 920px); overflow:auto; border-radius:22px; padding:16px; color:#e9f1ff;
   background: linear-gradient(180deg, rgba(18,26,48,.92), rgba(10,15,28,.92));
   box-shadow: 0 18px 60px rgba(0,0,0,.45);
   transform: translateY(8px); animation: wizIn .25s ease-out forwards;
