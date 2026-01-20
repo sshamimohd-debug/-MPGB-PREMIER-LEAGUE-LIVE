@@ -41,40 +41,22 @@ function fillSelect(sel, items, placeholder){
 }
 
 function renderXI(listEl, squad, selected){
-  // Professional list style (row + avatar + toggle)
   listEl.innerHTML = "";
-  squad.forEach((p, idx)=>{
-    const row = document.createElement("div");
-    row.className = "wizPlayerRow" + (selected.has(p) ? " on" : "");
-
-    const av = document.createElement("div");
-    av.className = "wizAv";
-    av.textContent = (p||"?").trim().slice(0,1).toUpperCase();
-
-    const name = document.createElement("div");
-    name.className = "wizPName";
-    name.textContent = p;
-
-    const tag = document.createElement("div");
-    tag.className = "wizPToggle";
-    tag.textContent = selected.has(p) ? "✓" : "+";
-
-    row.appendChild(av);
-    row.appendChild(name);
-    row.appendChild(tag);
-
-    row.addEventListener("click", ()=>{
+  squad.forEach(p=>{
+    const pill = document.createElement("div");
+    pill.className = "wizPill" + (selected.has(p) ? " on" : "");
+    pill.textContent = p;
+    pill.addEventListener("click", ()=>{
       if(selected.has(p)) selected.delete(p);
       else {
         if(selected.size >= 11) return;
         selected.add(p);
       }
       renderXI(listEl, squad, selected);
-      const cap = qs(".wizCounter, .wizCount", listEl.parentElement);
+      const cap = qs(".wizCounter", listEl.parentElement);
       if(cap) cap.textContent = `${selected.size}/11 selected`;
     });
-
-    listEl.appendChild(row);
+    listEl.appendChild(pill);
   });
 }
 
@@ -120,7 +102,7 @@ export function initScorerWizard(opts){
   // Panes are dynamic:
   // - Full setup for 1st innings or incomplete match setup
   // - Short flow for 2nd innings: Innings Break -> Opening -> Ready
-  let panes = ["xiA","xiB","leaders","toss"];
+  let panes = ["xiA","xiB","leaders","toss","opening","ready"];
   let step = 0;
 
   const titleEl = qs("#wizTitle", wiz);
@@ -165,25 +147,18 @@ export function initScorerWizard(opts){
 
   function setFlowForDoc(doc){
     const st = doc?.state || {};
-    const a = doc?.a, b = doc?.b;
-    const hasToss = !!(st.toss?.winner && st.toss?.decision);
-    const hasXI = !!(st.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
-    const hasLeaders = !!(
-      st.playingXIMeta?.[a]?.captainId && st.playingXIMeta?.[a]?.viceCaptainId && st.playingXIMeta?.[a]?.wicketKeeperId &&
-      st.playingXIMeta?.[b]?.captainId && st.playingXIMeta?.[b]?.viceCaptainId && st.playingXIMeta?.[b]?.wicketKeeperId
-    );
+    const idx = Number(st?.inningsIndex||0);
+    const { hasToss, hasXI } = computeHasSetup(doc);
 
-    // ✅ New match flow (as requested): Playing XI -> Leaders -> Toss -> Let's Play
-    // Wizard is ONLY for pre-match setup. Opening (striker/non-striker/bowler) will be taken on scorer page at innings start.
-    panes = ["xiA","xiB","leaders","toss"];
-
-    // If already fully set, wizard should not show.
-    if(hasToss && hasXI && hasLeaders){
-      panes = [];
+    // If it's 2nd innings AND match setup is already done, use short flow.
+    if(idx>=1 && hasToss && hasXI){
+      panes = ["break","opening","ready"];
+    } else {
+      panes = ["xiA","xiB","leaders","toss","opening","ready"];
     }
 
     // Rebuild dots whenever flow changes
-    makeDots(dotsEl, Math.max(1, panes.length));
+    makeDots(dotsEl, panes.length);
   }
 
   function renderInningsBreak(doc){
@@ -210,22 +185,13 @@ export function initScorerWizard(opts){
   }
 
   function updateHeader(){
-    if(!panes.length){
-      // safety
-      titleEl.textContent = "Match Setup";
-      stepEl.textContent = "";
-      btnBack.disabled = true;
-      btnNext.textContent = "Let's Play";
-      return;
-    }
     const pane = panes[step];
-    titleEl.textContent = (pane==="toss") ? "Toss" : "Select Playing XI";
+    titleEl.textContent = (pane==="break") ? "Innings Break" : "Match Setup";
     stepEl.textContent = `Step ${step+1}/${panes.length}`;
     setDots(dotsEl, step);
     btnBack.disabled = (step===0);
-
-    // Last step is toss → Let's Play
-    btnNext.textContent = (step===panes.length-1) ? "Let's Play" : "Next";
+    if(pane==="break") btnNext.textContent = "Start 2nd Innings";
+    else btnNext.textContent = (step===panes.length-1) ? "Start" : "Next";
   }
 
   function err(msg){
@@ -248,7 +214,12 @@ export function initScorerWizard(opts){
       if(need.some(x=>!x)) return "Captain/VC/WK sab select karo.";
       if(state.capA===state.vcA || state.capA===state.wkA || state.vcA===state.wkA) return "Team A me Captain/VC/WK alag-alag hone chahiye.";
       if(state.capB===state.vcB || state.capB===state.wkB || state.vcB===state.wkB) return "Team B me Captain/VC/WK alag-alag hone chahiye.";
-    }    return "";
+    }
+    if(pane==="opening"){
+      if(!state.openStriker || !state.openNon || !state.openBowler) return "Opening me Striker, Non-striker aur Bowler select karo.";
+      if(state.openStriker===state.openNon) return "Striker aur Non-striker same nahi ho sakte.";
+    }
+    return "";
   }
 
   function bindTossButtons(doc){
@@ -338,7 +309,12 @@ export function initScorerWizard(opts){
   }
 
   async function persistCurrent(doc){
-    const pane = panes[step];    if(pane==="toss"){
+    const pane = panes[step];
+    if(pane==="break"){
+      // UI-only pane; do not persist anything.
+      return;
+    }
+    if(pane==="toss"){
       await setToss(FB, matchId, state.tossWinner, state.tossDecision);
     }
     if(pane==="xiA" || pane==="xiB" || pane==="leaders"){
@@ -346,16 +322,14 @@ export function initScorerWizard(opts){
       const metaA = { captainId: state.capA, viceCaptainId: state.vcA, wicketKeeperId: state.wkA };
       const metaB = { captainId: state.capB, viceCaptainId: state.vcB, wicketKeeperId: state.wkB };
       await setPlayingXI(FB, matchId, Array.from(state.xiA), Array.from(state.xiB), metaA, metaB);
-    }  }
+    }
+    if(pane==="opening"){
+      await setOpeningSetup(FB, matchId, state.openStriker, state.openNon, state.openBowler);
+    }
+  }
 
   function open(doc){
     setFlowForDoc(doc);
-
-    if(!panes.length){
-      // Setup already complete
-      wiz.classList.add("hidden");
-      return;
-    }
 
     // preload any existing saved values if present
     const st = doc?.state || {};
@@ -419,7 +393,6 @@ export function initScorerWizard(opts){
   });
 
   btnNext.addEventListener("click", async ()=>{
-    if(!panes.length){ close(); if(onDone) onDone(); return; }
     const msg = validate();
     if(msg){ err(msg); return; }
 
@@ -449,13 +422,19 @@ export function initScorerWizard(opts){
     const a = doc?.a, b = doc?.b;
     const hasToss = !!(st.toss?.winner && st.toss?.decision);
     const hasXI = !!(st.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
-    const hasLeaders = !!(
-      st.playingXIMeta?.[a]?.captainId && st.playingXIMeta?.[a]?.viceCaptainId && st.playingXIMeta?.[a]?.wicketKeeperId &&
-      st.playingXIMeta?.[b]?.captainId && st.playingXIMeta?.[b]?.viceCaptainId && st.playingXIMeta?.[b]?.wicketKeeperId
+    const idx = Number(st.inningsIndex||0);
+    const inn = st.innings?.[idx];
+    const inningsStarted = (
+      !!inn?.openingDone ||
+      Number(inn?.ballsTotal||0)>0 ||
+      Number(inn?.legalBalls||0)>0 ||
+      Number(inn?.runs||0)>0 ||
+      (Array.isArray(inn?.ballByBall) && inn.ballByBall.length>0)
     );
+    const hasOpeners = !!(inn?.onField?.striker && inn?.onField?.nonStriker);
+    const needOpening = (!hasOpeners && !inningsStarted);
 
-    // Wizard only for pre-match setup.
-    return (!hasXI || !hasLeaders || !hasToss);
+    return !hasToss || !hasXI || needOpening;
   }
 
   return {
