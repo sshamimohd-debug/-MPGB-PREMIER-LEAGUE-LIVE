@@ -1,4 +1,4 @@
-import { setActiveNav, loadTournament, esc, persistLastMatchId } from "./util.js";
+import { setActiveNav, loadTournament, esc, persistLastMatchId, wireBottomNav } from "./util.js";
 import { getFB, watchAllMatches } from "./store-fb.js";
 import { firebaseReady } from "./firebase.js";
 
@@ -72,30 +72,27 @@ function renderStatic(t){
 
 
 function renderFromMatches(t, docs){
-<<<<<<< HEAD
-  // Render list using Live / Upcoming / Completed tabs (mobile app style)
-  window.__HOME_MATCHES__ = docs || [];
-  // Keep other tabs (Live/Scorecard) in-sync even when user opens them
-  // from bottom navigation without selecting a match.
-  try{
-    const all = window.__HOME_MATCHES__;
-    const pickLive = all.filter(m=>m.status==='LIVE')
-      .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
-    const pickUp = all.filter(m=>m.status!=='LIVE' && m.status!=='COMPLETED')
-      .sort((a,b)=> (a.matchId||'').localeCompare(b.matchId||''))[0];
-    const pickDone = all.filter(m=>m.status==='COMPLETED')
-      .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
-    const best = pickLive || pickUp || pickDone;
-    if(best?.matchId) persistLastMatchId(best.matchId);
-  }catch(e){}
-  renderHomeTab(window.__HOME_ACTIVE_TAB__ || "LIVE");
-}
-=======
+  // Decide a "best" match for app-wide context:
+  // LIVE (latest updated) → else next UPCOMING → else latest COMPLETED.
+  const all = Array.isArray(docs) ? docs : [];
+  const pickLive = all.filter(m=>m.status==="LIVE")
+    .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
+  const pickUp = all.filter(m=>m.status!=="LIVE" && m.status!=="COMPLETED")
+    .sort((a,b)=> (a.matchId||"").localeCompare(b.matchId||""))[0];
+  const pickDone = all.filter(m=>m.status==="COMPLETED")
+    .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
+  const best = pickLive || pickUp || pickDone;
+
+  // Persist + wire bottom nav so Scorecard/Live tabs open the same match.
+  if(best?.matchId){
+    persistLastMatchId(best.matchId);
+    wireBottomNav(best.matchId);
+  }
+
   // live: any LIVE, choose latest updated
-  const live = docs.filter(d=>d.status==="LIVE");
+  const live = all.filter(d=>d.status==="LIVE");
   live.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
   const liveBox = document.getElementById("liveBox");
->>>>>>> 1fc36c5134207650797bb5b0cdb4221f8a759d44
 
   if(live.length===0){
     liveBox.innerHTML = `<div class="muted small">No live match right now.</div>`;
@@ -120,7 +117,7 @@ function renderFromMatches(t, docs){
   }
 
   // upcoming: earliest by matchId order but only UPCOMING
-  const upcoming = docs.filter(d=>d.status!=="COMPLETED" && d.status!=="LIVE");
+  const upcoming = all.filter(d=>d.status!=="COMPLETED" && d.status!=="LIVE");
   upcoming.sort((a,b)=> a.matchId.localeCompare(b.matchId));
   const upEl = document.getElementById("upcomingList");
   upEl.innerHTML = upcoming.slice(0,10).map(m=>`
@@ -136,7 +133,7 @@ function renderFromMatches(t, docs){
     </div>
   `).join("") || `<div class="muted small">No upcoming fixtures found.</div>`;
 
-  const recent = docs.filter(d=>d.status==="COMPLETED");
+  const recent = all.filter(d=>d.status==="COMPLETED");
   recent.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
   const rEl = document.getElementById("recentList");
   rEl.innerHTML = recent.slice(0,6).map(m=>`
