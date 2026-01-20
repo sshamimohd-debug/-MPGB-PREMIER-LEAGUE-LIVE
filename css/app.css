@@ -89,6 +89,68 @@
 .quickGrid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
 .quickGrid .btn{ height:46px; border-radius:16px; }
 
+
+/* Home: 1-row primary actions */
+.quickRow{
+  display:flex;
+  gap:10px;
+  margin-top:8px;
+  overflow-x:auto;
+  padding-bottom:4px;
+  -webkit-overflow-scrolling: touch;
+}
+.quickRow::-webkit-scrollbar{ height:6px; }
+.quickRow::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.12); border-radius:999px; }
+
+.qa{
+  flex: 0 0 auto;
+  min-width: 92px;
+  height: 64px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  text-decoration:none;
+  color: inherit;
+  box-shadow: 0 10px 22px rgba(0,0,0,.18);
+  transition: transform .08s ease, background .15s ease, border-color .15s ease;
+}
+.qa:active{ transform: scale(.98); }
+.qaI{ font-size:18px; }
+.qaT{ font-weight:900; font-size:13px; letter-spacing:.15px; }
+
+.btn.full{ width:100%; margin-top:10px; }
+
+/* Modal (Info) */
+.modal{ position:fixed; inset:0; z-index:10000; display:none; }
+.modal.open{ display:block; }
+.modalBg{ position:absolute; inset:0; background: rgba(0,0,0,.55); backdrop-filter: blur(8px); }
+.modalCard{
+  position:absolute;
+  left:50%;
+  transform: translateX(-50%);
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  width: min(640px, 94vw);
+  max-height: min(75vh, 720px);
+  overflow:auto;
+  border-radius:22px;
+  border:1px solid rgba(255,255,255,.12);
+  padding:14px;
+  background: linear-gradient(180deg, rgba(18,26,48,.96), rgba(10,15,28,.96));
+  box-shadow: 0 22px 70px rgba(0,0,0,.55);
+}
+.modalTop{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+body.modalOpen{ overflow:hidden; }
+
+@media (max-width: 420px){
+  .qa{ min-width: 86px; height: 60px; }
+  .modalCard{ bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+
 /* Schedule: mobile match cards */
 .matchCard{
   border:1px solid var(--border);
@@ -145,111 +207,5 @@
 @media (max-width: 520px){
   .grid.cols2{ grid-template-columns: 1fr; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
-}
-
-/* =========================
-   Home: Live / Upcoming / Completed tabs + expandable match cards
-   ========================= */
-
-.segTabs{
-  display:flex;
-  gap:8px;
-  padding:6px;
-  border:1px solid var(--border);
-  border-radius:999px;
-  background: rgba(255,255,255,.03);
-  overflow:auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.seg{
-  flex:1;
-  min-width:120px;
-  height:38px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.10);
-  background: transparent;
-  color: var(--text);
-  font-weight:900;
-  cursor:pointer;
-  letter-spacing:.1px;
-  transition: transform .08s ease, background .15s ease, border-color .15s ease;
-}
-
-.seg:active{ transform: scale(.99); }
-
-.seg.on{
-  background: linear-gradient(90deg, rgba(43,108,255,.95), rgba(0,200,255,.75));
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 10px 30px rgba(0,0,0,.20);
-}
-
-.mCard{
-  border:1px solid var(--border);
-  border-radius:18px;
-  background: rgba(255,255,255,.03);
-  overflow:hidden;
-}
-
-.mCard + .mCard{ margin-top:10px; }
-
-.mSum{
-  list-style:none;
-  cursor:pointer;
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  padding:12px;
-}
-
-.mSum::-webkit-details-marker{ display:none; }
-
-.mLeft{ flex:1; min-width:0; }
-.mTeams{ font-size:14px; font-weight:950; line-height:1.15; margin-top:6px; }
-.mMeta{ font-size:12px; opacity:.82; margin-top:6px; }
-
-.mRight{ display:flex; align-items:center; gap:8px; }
-.mChevron{
-  width:28px; height:28px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  font-weight:900;
-  opacity:.9;
-  transform: translateY(1px);
-}
-
-.mCard[open] .mChevron{ transform: rotate(90deg); }
-
-.mBody{
-  padding:0 12px 12px 12px;
-}
-
-.mBodyGrid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:8px;
-  padding:10px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.08);
-  background: rgba(0,0,0,.06);
-}
-
-.mActions{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
-
-.mActions .btn{ flex:1; height:44px; border-radius:14px; }
-
-@media (max-width: 420px){
-  .seg{ min-width: 98px; }
-  .mBodyGrid{ grid-template-columns: 1fr; }
 }
 

@@ -47,51 +47,93 @@
       <span class="badge up" id="fbState">Firebase: not configured</span>
     </div>
     <div class="sep"></div>
-    <div class="grid cols2" style="gap:10px">
-      <a class="btn" href="schedule.html">Fixtures</a>
-      <a class="btn" href="points.html">Points</a>
-      <a class="btn ghost" href="teams.html">Teams</a>
-      <a class="btn ghost" href="admin.html">Scorer/Admin</a>
-    </div>
-    <div class="sep"></div>
-    <div class="kpi" id="kpi"></div>
 
-    <details class="card" style="padding:12px; margin:12px 0 0 0">
-      <summary class="muted small" style="cursor:pointer; list-style:none; font-weight:850">Official PDFs & Rules (tap to open)</summary>
-      <div class="sep"></div>
-      <div class="muted small">Official PDFs:</div>
-      <div class="kpi" style="margin-top:8px">
-        <a class="pill" href="docs/IOM_02.01.2026_MPGB Premier League.pdf" target="_blank" rel="noopener">IOM 02.01.2026</a>
-        <a class="pill" href="docs/MPGB_Premier_League_Revised_Schedule.pdf" target="_blank" rel="noopener">Revised Schedule 03.01.2026</a>
-        <a class="pill" href="rules.html">Full Rules</a>
-      </div>
-      <div class="sep"></div>
-      <div class="muted small">Important rules (quick):</div>
-      <div class="list" id="rulesList"></div>
-    </details>
+    <!-- Primary actions (1-row, scrollable on small screens) -->
+    <div class="quickRow" aria-label="Primary actions">
+      <a class="qa" href="schedule.html" aria-label="Fixtures">
+        <div class="qaI">📅</div>
+        <div class="qaT">Fixtures</div>
+      </a>
+      <a class="qa" href="points.html" aria-label="Points">
+        <div class="qaI">📊</div>
+        <div class="qaT">Points</div>
+      </a>
+      <a class="qa" href="teams.html" aria-label="Teams">
+        <div class="qaI">👥</div>
+        <div class="qaT">Teams</div>
+      </a>
+      <a class="qa" href="admin.html" aria-label="Scorer/Admin">
+        <div class="qaI">⚙️</div>
+        <div class="qaT">Scorer</div>
+      </a>
+    </div>
+
+    <!-- Info (moves KPIs + PDFs + Rules into one place) -->
+    <button class="btn ghost full" id="btnInfo" type="button">ℹ️ Info</button>
   </div>
 
-  <!-- Matches: Live / Upcoming / Completed (Cricbuzz-like tabs) -->
-  <div class="card" style="margin-top:14px">
-    <div class="row wrap" style="justify-content:space-between; align-items:center">
-      <div>
-        <div class="h1" style="margin:0">Matches</div>
-        <div class="muted small">Live / Upcoming / Completed</div>
+  <!-- Live + Upcoming (Cricbuzz-like) -->
+  <div class="grid cols2" style="margin-top:14px">
+    <div class="card">
+      <div class="row wrap" style="justify-content:space-between">
+        <div>
+          <div class="h1" style="margin:0">🔴 Live Now</div>
+          <div class="muted small">Live match yahin दिखेगा.</div>
+        </div>
+        <a class="btn ghost" href="live.html">Open Live</a>
       </div>
-      <a class="btn ghost" href="schedule.html">All Fixtures</a>
-    </div>
-    <div class="sep"></div>
-
-    <div class="segTabs" id="homeTabs" role="tablist" aria-label="Match filters">
-      <button class="seg on" data-tab="LIVE" role="tab" aria-selected="true">Live</button>
-      <button class="seg" data-tab="UPCOMING" role="tab" aria-selected="false">Upcoming</button>
-      <button class="seg" data-tab="COMPLETED" role="tab" aria-selected="false">Completed</button>
+      <div class="sep"></div>
+      <div id="liveBox" class="muted small">Loading…</div>
     </div>
 
-    <div class="list" id="homeMatchList"><div class="muted small">Loading…</div></div>
+    <div class="card">
+      <div class="row wrap" style="justify-content:space-between">
+        <div>
+          <div class="h1" style="margin:0">Upcoming</div>
+          <div class="muted small">Next fixtures</div>
+        </div>
+        <a class="btn ghost" href="schedule.html">All</a>
+      </div>
+      <div class="sep"></div>
+      <div class="list" id="upcomingList"><div class="muted small">Loading…</div></div>
+      <div class="sep"></div>
+      <div class="h1" style="font-size:16px; margin:0">Recent</div>
+      <div class="list" id="recentList"><div class="muted small">—</div></div>
+    </div>
   </div>
 
   <div class="footer-note">Premium mobile UI • Real-time via Firebase • Offline-ready</div>
+</div>
+
+
+<!-- Info Modal (UI only) -->
+<div class="modal" id="infoModal" aria-hidden="true">
+  <div class="modalBg" data-close="1"></div>
+  <div class="modalCard" role="dialog" aria-modal="true" aria-label="Tournament Info">
+    <div class="modalTop">
+      <div>
+        <div class="h1" style="margin:0">Tournament Info</div>
+        <div class="muted small" id="infoMeta">—</div>
+      </div>
+      <button class="btn ghost" type="button" data-close="1">Close</button>
+    </div>
+    <div class="sep"></div>
+
+    <div class="muted small">At a glance</div>
+    <div class="kpi" id="infoKpi" style="margin-top:8px"></div>
+
+    <div class="sep"></div>
+    <div class="muted small">Official PDFs</div>
+    <div class="kpi" style="margin-top:8px">
+      <a class="pill" href="docs/IOM_02.01.2026_MPGB Premier League.pdf" target="_blank" rel="noopener">IOM 02.01.2026</a>
+      <a class="pill" href="docs/MPGB_Premier_League_Revised_Schedule.pdf" target="_blank" rel="noopener">Revised Schedule 03.01.2026</a>
+      <a class="pill" href="rules.html">Full Rules</a>
+    </div>
+
+    <div class="sep"></div>
+    <div class="muted small">Important rules (quick)</div>
+    <div class="list" id="rulesList"></div>
+  </div>
 </div>
 
 <script type="module" src="js/page-home.js"></script>
