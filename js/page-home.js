@@ -38,65 +38,97 @@ function renderStatic(t){
 }
 
 function renderFromMatches(t, docs){
-  // live: any LIVE, choose latest updated
-  const live = docs.filter(d=>d.status==="LIVE");
-  live.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
-  const liveBox = document.getElementById("liveBox");
+  // Render list using Live / Upcoming / Completed tabs (mobile app style)
+  window.__HOME_MATCHES__ = docs || [];
+  renderHomeTab(window.__HOME_ACTIVE_TAB__ || "LIVE");
+}
 
-  if(live.length===0){
-    liveBox.innerHTML = `<div class="muted small">No live match right now.</div>`;
+function getTabEl(){
+  return document.getElementById("homeTabs");
+}
+
+function setActiveTab(tab){
+  window.__HOME_ACTIVE_TAB__ = tab;
+  const tabs = getTabEl();
+  if(!tabs) return;
+  tabs.querySelectorAll(".seg").forEach(btn=>{
+    const on = (btn.getAttribute("data-tab")===tab);
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
+}
+
+function matchBadge(status){
+  if(status==="LIVE") return `<span class="badge live">🔴 LIVE</span>`;
+  if(status==="COMPLETED") return `<span class="badge done">✅ DONE</span>`;
+  return `<span class="badge up">🕒 UPCOMING</span>`;
+}
+
+function safeText(v, d="-"){ return (v===undefined || v===null || v==="") ? d : v; }
+
+function renderHomeTab(tab){
+  setActiveTab(tab);
+  const list = document.getElementById("homeMatchList");
+  if(!list) return;
+  const docs = window.__HOME_MATCHES__ || [];
+
+  let filtered = [];
+  if(tab==="LIVE"){
+    filtered = docs.filter(d=>d.status==="LIVE");
+    filtered.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+  } else if(tab==="COMPLETED"){
+    filtered = docs.filter(d=>d.status==="COMPLETED");
+    filtered.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
   } else {
-    const m = live[0];
-    const sum = m.summary || {};
-    liveBox.innerHTML = `
-      <div class="item">
-        <div class="left">
-          <span class="badge live">🔴 LIVE</span>
-          <div>
-            <div><b>${esc(m.a)} vs ${esc(m.b)}</b> <span class="muted small">• Group ${esc(m.group)} • ${esc(m.time)}</span></div>
-            <div class="muted small">${esc(sum.batting||m.a)}: <b>${esc(sum.scoreText||"0/0")}</b> <span class="muted">(${esc(sum.oversText||"0.0/10")})</span> • RR ${esc(sum.rr||0)}</div>
-          </div>
-        </div>
-        <div class="kpi">
-          <a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Live</a>
-          <a class="btn ghost" href="live.html?match=${encodeURIComponent(m.matchId)}">Ball-by-ball</a>
-        </div>
-      </div>
-    `;
+    filtered = docs.filter(d=>d.status!=="LIVE" && d.status!=="COMPLETED");
+    filtered.sort((a,b)=> a.matchId.localeCompare(b.matchId));
   }
 
-  // upcoming: earliest by matchId order but only UPCOMING
-  const upcoming = docs.filter(d=>d.status!=="COMPLETED" && d.status!=="LIVE");
-  upcoming.sort((a,b)=> a.matchId.localeCompare(b.matchId));
-  const upEl = document.getElementById("upcomingList");
-  upEl.innerHTML = upcoming.slice(0,10).map(m=>`
-    <div class="item">
-      <div class="left">
-        <span class="badge up">🕒 UPCOMING</span>
-        <div>
-          <div><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
-          <div class="muted small">Group ${esc(m.group)} • ${esc(m.time)} • Match ${esc(m.matchId)}</div>
-        </div>
-      </div>
-      <a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
-    </div>
-  `).join("") || `<div class="muted small">No upcoming fixtures found.</div>`;
+  if(filtered.length===0){
+    list.innerHTML = `<div class="muted small" style="padding:10px 2px">No matches in this tab.</div>`;
+    return;
+  }
 
-  const recent = docs.filter(d=>d.status==="COMPLETED");
-  recent.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
-  const rEl = document.getElementById("recentList");
-  rEl.innerHTML = recent.slice(0,6).map(m=>`
-    <div class="item">
-      <div class="left">
-        <span class="badge done">✅ DONE</span>
-        <div>
-          <div><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
-          <div class="muted small">Match ${esc(m.matchId)} • Group ${esc(m.group)} • ${esc(m.time)}</div>
+  list.innerHTML = filtered.slice(0, 30).map(m=>{
+    const sum = m.summary || {};
+    const leftLine = tab==="LIVE"
+      ? `${esc(safeText(sum.batting||m.a))}: <b>${esc(safeText(sum.scoreText, "0/0"))}</b> <span class="muted">(${esc(safeText(sum.oversText, "0.0"))})</span>`
+      : (tab==="COMPLETED" ? esc(safeText(sum.resultText || sum.result || sum.winnerText || "Result updated")) : `Group ${esc(safeText(m.group))} • ${esc(safeText(m.time))}`);
+
+    const rightChip = tab==="LIVE" ? `<span class="pill" style="border-color:rgba(255,255,255,.18)">RR ${esc(safeText(sum.rr, 0))}</span>` : `<span class="pill">Match <b>${esc(m.matchId)}</b></span>`;
+
+    const actions = tab==="LIVE"
+      ? `
+        <a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
+        <a class="btn ghost" href="live.html?match=${encodeURIComponent(m.matchId)}">Ball-by-ball</a>
+      `
+      : `
+        <a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
+        <a class="btn ghost" href="scorecard.html?match=${encodeURIComponent(m.matchId)}">Scorecard</a>
+      `;
+
+    return `
+      <details class="mCard">
+        <summary class="mSum">
+          <div class="mLeft">
+            ${matchBadge(m.status)}
+            <div class="mTeams"><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
+            <div class="mMeta">${leftLine}</div>
+          </div>
+          <div class="mRight">${rightChip}<span class="mChevron" aria-hidden="true">›</span></div>
+        </summary>
+        <div class="mBody">
+          <div class="mBodyGrid">
+            <div class="muted small">Group: <b>${esc(safeText(m.group))}</b></div>
+            <div class="muted small">Time: <b>${esc(safeText(m.time))}</b></div>
+            <div class="muted small">Venue: <b>${esc(safeText(m.venue))}</b></div>
+            <div class="muted small">Status: <b>${esc(safeText(m.status))}</b></div>
+          </div>
+          <div class="mActions">${actions}</div>
         </div>
-      </div>
-      <a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">Summary</a>
-    </div>
-  `).join("") || `<div class="muted small">No completed matches yet.</div>`;
+      </details>
+    `;
+  }).join("");
 }
 
 (async function(){
@@ -104,8 +136,21 @@ function renderFromMatches(t, docs){
   const t = await loadTournament();
   renderStatic(t);
 
+  // Tabs listeners
+  try{
+    const tabs = getTabEl();
+    if(tabs){
+      tabs.addEventListener("click", (e)=>{
+        const btn = e.target?.closest?.(".seg");
+        if(!btn) return;
+        renderHomeTab(btn.getAttribute("data-tab") || "LIVE");
+      });
+    }
+  }catch(e){}
+
   if(!FB){
-    document.getElementById("liveBox").textContent = "Firebase not configured. Configure js/firebase-config.js and redeploy.";
+    const box = document.getElementById("homeMatchList");
+    if(box) box.innerHTML = "Firebase not configured. Configure js/firebase-config.js and redeploy.";
     return;
   }
 

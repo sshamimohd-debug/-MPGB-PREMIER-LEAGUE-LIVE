@@ -1,12 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<meta name="theme-color" content="#0b1020"/>
-<link rel="stylesheet" href="css/theme-dark.css"/>
+<meta name="theme-color" content="#2b6cff"/>
+<link rel="stylesheet" href="css/theme-light.css"/>
 <link rel="stylesheet" href="css/app.css"/>
 <title>MPGB Premier League</title>  <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="shortcut icon" href="favicon.ico">
-  <meta name="theme-color" content="#0b1020"/>
+  <meta name="theme-color" content="#2b6cff"/>
   <link rel="apple-touch-icon" href="assets/icons/icon-180.png"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
 </head><body>
@@ -290,6 +290,17 @@
         <div class="wizRow"><label>Captain</label><select id="capB"></select></div>
         <div class="wizRow"><label>Vice Captain</label><select id="vcB"></select></div>
         <div class="wizRow"><label>Wicket Keeper</label><select id="wkB"></select></div>
+      </section>
+
+      <!-- 2nd innings UX: show an Innings Break screen before asking only opener + bowler -->
+      <section class="wizPane hidden" data-pane="break">
+        <div class="wizH">Innings Break</div>
+        <div class="wizP">1st innings complete. Ab 2nd innings (chase) start karte hain.</div>
+        <div class="wizBreakCard">
+          <div class="wizBreakLine" id="breakSummary">1st Innings: -</div>
+          <div class="wizBreakLine strong" id="breakTarget">Target: -</div>
+          <div class="muted small" id="breakNote" style="margin-top:6px"></div>
+        </div>
       </section>
 
       <section class="wizPane hidden" data-pane="opening">

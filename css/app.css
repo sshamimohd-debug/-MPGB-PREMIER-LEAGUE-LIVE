@@ -57,6 +57,12 @@
   border:1px solid rgba(0,255,160,.22); font-weight:800; text-align:center;
 }
 
+/* Innings Break (wizard) */
+.wizBreakCard{ padding:14px; border-radius:18px; background: rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.10); }
+.wizBreakLine{ font-size:14px; opacity:.92; }
+.wizBreakLine.strong{ font-size:16px; font-weight:900; opacity:1; margin-top:6px; }
+
 @media (max-width: 420px){
   .wizRow{ grid-template-columns: 1fr; }
   .wizRow label{ margin-bottom:4px; }
@@ -139,5 +145,111 @@
 @media (max-width: 520px){
   .grid.cols2{ grid-template-columns: 1fr; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
+}
+
+/* =========================
+   Home: Live / Upcoming / Completed tabs + expandable match cards
+   ========================= */
+
+.segTabs{
+  display:flex;
+  gap:8px;
+  padding:6px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background: rgba(255,255,255,.03);
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.seg{
+  flex:1;
+  min-width:120px;
+  height:38px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  background: transparent;
+  color: var(--text);
+  font-weight:900;
+  cursor:pointer;
+  letter-spacing:.1px;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease;
+}
+
+.seg:active{ transform: scale(.99); }
+
+.seg.on{
+  background: linear-gradient(90deg, rgba(43,108,255,.95), rgba(0,200,255,.75));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,.20);
+}
+
+.mCard{
+  border:1px solid var(--border);
+  border-radius:18px;
+  background: rgba(255,255,255,.03);
+  overflow:hidden;
+}
+
+.mCard + .mCard{ margin-top:10px; }
+
+.mSum{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+}
+
+.mSum::-webkit-details-marker{ display:none; }
+
+.mLeft{ flex:1; min-width:0; }
+.mTeams{ font-size:14px; font-weight:950; line-height:1.15; margin-top:6px; }
+.mMeta{ font-size:12px; opacity:.82; margin-top:6px; }
+
+.mRight{ display:flex; align-items:center; gap:8px; }
+.mChevron{
+  width:28px; height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  font-weight:900;
+  opacity:.9;
+  transform: translateY(1px);
+}
+
+.mCard[open] .mChevron{ transform: rotate(90deg); }
+
+.mBody{
+  padding:0 12px 12px 12px;
+}
+
+.mBodyGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.06);
+}
+
+.mActions{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.mActions .btn{ flex:1; height:44px; border-radius:14px; }
+
+@media (max-width: 420px){
+  .seg{ min-width: 98px; }
+  .mBodyGrid{ grid-template-columns: 1fr; }
 }
 

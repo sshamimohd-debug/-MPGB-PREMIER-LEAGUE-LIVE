@@ -68,6 +68,22 @@ function guessBatBowl(doc){
   return { batting, bowling };
 }
 
+function oversTextFromLegalBalls(lb){
+  const n = Number(lb||0);
+  const o = Math.floor(n/6);
+  const b = n%6;
+  return `${o}.${b}`;
+}
+
+function hasMatchSetup(st, a, b){
+  const hasToss = !!(st?.toss || st?.tossWinner);
+  const hasXI = !!(st?.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
+  const mA = st?.playingXIMeta?.[a] || {};
+  const mB = st?.playingXIMeta?.[b] || {};
+  const hasLeaders = !!(mA.captainId && mA.viceCaptainId && mA.wicketKeeperId && mB.captainId && mB.viceCaptainId && mB.wicketKeeperId);
+  return { hasToss, hasXI, hasLeaders };
+}
+
 export function initScorerWizard(opts){
   const {
     FB,
@@ -83,7 +99,10 @@ export function initScorerWizard(opts){
   const wiz = qs("#setupWizard");
   if(!wiz) return null;
 
-  const panes = ["toss","xiA","xiB","leaders","opening","ready"];
+  // Panes are dynamic:
+  // - Full setup for 1st innings or incomplete match setup
+  // - Short flow for 2nd innings: Innings Break -> Opening -> Ready
+  let panes = ["toss","xiA","xiB","leaders","opening","ready"];
   let step = 0;
 
   const titleEl = qs("#wizTitle", wiz);
@@ -91,6 +110,11 @@ export function initScorerWizard(opts){
   const dotsEl  = qs("#wizDots", wiz);
   const btnBack = qs("#wizBack", wiz);
   const btnNext = qs("#wizNext", wiz);
+
+  // Innings break pane (optional)
+  const breakSummaryEl = qs("#breakSummary", wiz);
+  const breakTargetEl  = qs("#breakTarget", wiz);
+  const breakNoteEl    = qs("#breakNote", wiz);
 
   const state = {
     tossWinner: "",
@@ -102,14 +126,72 @@ export function initScorerWizard(opts){
     openStriker: "", openNon: "", openBowler: ""
   };
 
-  makeDots(dotsEl, panes.length);
+  function fmtOversFromLegalBalls(lb){
+    const n = Number(lb||0);
+    const o = Math.floor(n/6);
+    const b = n%6;
+    return `${o}.${b}`;
+  }
+
+  function computeHasSetup(doc){
+    const st = doc?.state || {};
+    const a = doc?.a, b = doc?.b;
+    const hasToss = !!(st.toss?.winner && st.toss?.decision);
+    const hasXI = !!(st.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
+    const hasLeaders = !!(
+      st.playingXIMeta?.[a]?.captainId && st.playingXIMeta?.[a]?.viceCaptainId && st.playingXIMeta?.[a]?.wicketKeeperId &&
+      st.playingXIMeta?.[b]?.captainId && st.playingXIMeta?.[b]?.viceCaptainId && st.playingXIMeta?.[b]?.wicketKeeperId
+    );
+    return { hasToss, hasXI, hasLeaders };
+  }
+
+  function setFlowForDoc(doc){
+    const st = doc?.state || {};
+    const idx = Number(st?.inningsIndex||0);
+    const { hasToss, hasXI } = computeHasSetup(doc);
+
+    // If it's 2nd innings AND match setup is already done, use short flow.
+    if(idx>=1 && hasToss && hasXI){
+      panes = ["break","opening","ready"];
+    } else {
+      panes = ["toss","xiA","xiB","leaders","opening","ready"];
+    }
+
+    // Rebuild dots whenever flow changes
+    makeDots(dotsEl, panes.length);
+  }
+
+  function renderInningsBreak(doc){
+    if(!breakSummaryEl || !breakTargetEl) return;
+    const st = doc?.state || {};
+    const inn0 = st?.innings?.[0] || {};
+    const runs = Number(inn0?.runs||0);
+    const wk = Number(inn0?.wickets||0);
+    const lb = Number(inn0?.legalBalls||inn0?.ballsTotal||0);
+    const ov = fmtOversFromLegalBalls(lb);
+
+    const target = runs + 1;
+
+    // Who is chasing? prefer innings[1].batting if present
+    const inn1 = st?.innings?.[1] || {};
+    const chasing = inn1?.batting || (doc?.a && doc?.b ? (inn0?.batting===doc.a ? doc.b : doc.a) : "");
+
+    breakSummaryEl.textContent = `1st Innings: ${runs}/${wk} (${ov} ov)`;
+    breakTargetEl.textContent = chasing ? `Target for ${chasing}: ${target}` : `Target: ${target}`;
+
+    if(breakNoteEl){
+      breakNoteEl.textContent = "Start 2nd innings ke liye sirf openers aur first bowler select hoga.";
+    }
+  }
 
   function updateHeader(){
-    titleEl.textContent = "Match Setup";
+    const pane = panes[step];
+    titleEl.textContent = (pane==="break") ? "Innings Break" : "Match Setup";
     stepEl.textContent = `Step ${step+1}/${panes.length}`;
     setDots(dotsEl, step);
     btnBack.disabled = (step===0);
-    btnNext.textContent = (step===panes.length-1) ? "Start" : "Next";
+    if(pane==="break") btnNext.textContent = "Start 2nd Innings";
+    else btnNext.textContent = (step===panes.length-1) ? "Start" : "Next";
   }
 
   function err(msg){
@@ -228,6 +310,10 @@ export function initScorerWizard(opts){
 
   async function persistCurrent(doc){
     const pane = panes[step];
+    if(pane==="break"){
+      // UI-only pane; do not persist anything.
+      return;
+    }
     if(pane==="toss"){
       await setToss(FB, matchId, state.tossWinner, state.tossDecision);
     }
@@ -243,6 +329,8 @@ export function initScorerWizard(opts){
   }
 
   function open(doc){
+    setFlowForDoc(doc);
+
     // preload any existing saved values if present
     const st = doc?.state || {};
     const a = doc?.a;
@@ -279,6 +367,11 @@ export function initScorerWizard(opts){
     bindTossButtons(doc);
     bindSelectState();
     hydrateLists(doc);
+
+    // Fill innings break pane summary (if present)
+    if(qs('.wizPane[data-pane="break"]', wiz)){
+      renderInningsBreak(doc);
+    }
 
     step = 0;
     showPane(wiz, panes[step]);
@@ -327,7 +420,7 @@ export function initScorerWizard(opts){
   function shouldOpenForDoc(doc){
     const st = doc?.state || {};
     const a = doc?.a, b = doc?.b;
-    const hasToss = !!(st.toss || doc?.tossWinner);
+    const hasToss = !!(st.toss?.winner && st.toss?.decision);
     const hasXI = !!(st.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
     const idx = Number(st.inningsIndex||0);
     const inn = st.innings?.[idx];

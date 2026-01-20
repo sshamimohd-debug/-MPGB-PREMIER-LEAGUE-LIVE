@@ -20,6 +20,7 @@ let LAST_STATUS = null;
 let _tossMounted = false;
 let _xiMounted = false;
 let _openingMounted = false;
+let _breakMounted = false;
 
 let _wizardBound = false;
 
@@ -331,6 +332,25 @@ async function safeAddBall(ball){
     await addBall(FB, matchId, ball);
   }catch(e){
     const msg = e?.message || String(e);
+    // ✅ UX fix:
+    // Sometimes the match doc can be missing opening setup (striker/non-striker) even when
+    // scorer has already selected them in the Ball input dropdowns.
+    // In that case, auto-save opening once (UI convenience only) and retry the ball.
+    if(/Opening setup pending/i.test(msg)){
+      const n = requireNames();
+      if(n){
+        try{
+          // Save opening (only sets onField striker/nonStriker/bowler + openingDone)
+          await setOpeningSetup(FB, matchId, n.batter, n.nonStriker, n.bowler);
+          showState("Opening auto-saved ✅ Ab scoring continue karo.", true);
+          await addBall(FB, matchId, ball);
+          return;
+        }catch(e2){
+          // fallthrough to normal error reporting
+        }
+      }
+    }
+
     showState(msg, false);
     alert(msg);
   }
@@ -404,8 +424,16 @@ function updateTossUI(doc){
 
   const st = doc?.state || {};
   const hasToss = !!(st.toss || doc?.tossWinner);
+  const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
+  const idx = Number(st?.inningsIndex||0);
   const card = $("tossCard");
   const msg = $("tossMsg");
+
+  // ✅ UX: 2nd innings me toss repeat nahi dikhana
+  if(idx>=1 && hasToss && hasXI){
+    if(card) card.style.display = "none";
+    return;
+  }
 
   if(card){
     // Show whenever toss not set (even if match accidentally flipped to LIVE)
@@ -577,8 +605,15 @@ function updateXIUI(doc){
   if(!card) return;
 
   const st = doc?.state || {};
+  const idx = Number(st?.inningsIndex||0);
   const hasToss = !!(st.toss || doc?.tossWinner);
   const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
+
+  // ✅ UX: 2nd innings me XI/Leaders repeat nahi dikhana
+  if(idx>=1 && hasToss && hasXI){
+    card.style.display = "none";
+    return;
+  }
 
   // Show whenever XI not set but toss is available (even if match accidentally flipped to LIVE)
   card.style.display = (hasToss && !hasXI) ? "block" : (doc?.status==="UPCOMING" && hasToss ? "block" : "none");
@@ -604,6 +639,85 @@ function updateXIUI(doc){
   if(metaB){ if($("capB")) $("capB").value = metaB.captainId || ""; if($("vcB")) $("vcB").value = metaB.viceCaptainId || ""; if($("wkB")) $("wkB").value = metaB.wicketKeeperId || ""; }
 
   $("xiMsg").textContent = hasXI ? "Saved ✅ (You can re-save if needed)" : "Pending: select 11-11 players.";
+}
+
+// -----------------------------
+// Innings Break Card (UI only)
+// -----------------------------
+function mountInningsBreakCard(){
+  if(_breakMounted) return;
+  const batterSel = $("batter");
+  const ballCard = batterSel ? batterSel.closest(".card") : null;
+  const parent = ballCard ? ballCard.parentElement : null;
+  if(!parent || !ballCard) return;
+
+  const br = document.createElement("div");
+  br.className = "card";
+  br.id = "inningsBreakCard";
+  br.innerHTML = `
+    <div class="h1" style="font-size:16px">Innings Break</div>
+    <div class="muted small" style="margin-top:4px" id="ibNote">1st innings complete. Ab 2nd innings (chase) start karte hain.</div>
+    <hr class="sep"/>
+    <div class="row" style="justify-content:space-between; gap:12px; align-items:flex-start">
+      <div>
+        <div class="muted small" id="ibSummary">-</div>
+        <div class="h1" style="margin-top:6px; font-size:18px" id="ibTarget">-</div>
+      </div>
+      <button class="btn ok" id="btnStart2nd" type="button">Start 2nd Innings</button>
+    </div>
+    <div class="muted small" style="margin-top:10px">Next step: sirf <b>opener batsman</b> + <b>opening bowler</b> select hoga.</div>
+  `;
+
+  parent.insertBefore(br, ballCard);
+  _breakMounted = true;
+
+  br.querySelector("#btnStart2nd")?.addEventListener("click", ()=>{
+    // Open the short wizard (Break -> Opening -> Ready)
+    if(!CURRENT_DOC) return;
+    ensureWizard();
+    if(WIZARD) WIZARD.open(CURRENT_DOC);
+  });
+}
+
+function updateInningsBreakUI(doc){
+  if(!_breakMounted) mountInningsBreakCard();
+  const card = document.getElementById("inningsBreakCard");
+  if(!card) return;
+
+  const st = doc?.state || {};
+  const idx = Number(st?.inningsIndex||0);
+  const hasToss = !!(st.toss || doc?.tossWinner);
+  const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
+
+  const inn = currentInnings(doc);
+  const of = inn?.onField || {};
+  const inningsStarted = !!(
+    inn && (
+      (Number(inn.ballsTotal||0) > 0) ||
+      (Number(inn.balls||0) > 0) ||
+      ((inn.ballByBall?.length||0) > 0) ||
+      (inn.openingDone === true)
+    )
+  );
+  const hasOpening = inningsStarted || !!(of.striker && of.nonStriker && of.bowler);
+
+  // Show only during 2nd innings BEFORE opening is selected
+  const show = (idx>=1 && hasToss && hasXI && !hasOpening);
+  card.style.display = show ? "block" : "none";
+  if(!show) return;
+
+  const i1 = st?.innings?.[0] || {};
+  const runs = Number(i1.runs||0);
+  const wk = Number(i1.wickets||i1.wkts||0);
+  const lb = Number(i1.legalBalls||i1.ballsTotal||i1.balls||0);
+  const ov = fmtOversFromBalls(lb);
+  const target = runs + 1;
+
+  const { batting } = battingBowlingTeams(doc);
+  const summaryEl = document.getElementById("ibSummary");
+  const targetEl = document.getElementById("ibTarget");
+  if(summaryEl) summaryEl.textContent = `1st Innings: ${runs}/${wk} (${ov} ov)`;
+  if(targetEl) targetEl.textContent = `Target for ${batting}: ${target}`;
 }
 
 // -----------------------------
@@ -669,8 +783,15 @@ function updateOpeningUI(doc){
   const card = $("openingCard");
   if(!card) return;
   const st = doc?.state || {};
+  const idx = Number(st?.inningsIndex||0);
   const hasToss = !!(st.toss || doc?.tossWinner);
   const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
+
+  // ✅ UX: 2nd innings me opening selection wizard se hoga (Break -> Opening). Is page par opening card hide.
+  if(idx>=1 && hasToss && hasXI){
+    card.style.display = "none";
+    return;
+  }
 
   const inn = currentInnings(doc);
   const of = inn?.onField || {};
@@ -1041,6 +1162,9 @@ function render(doc){
 
   mountPlayingXICard();
   updateXIUI(doc);
+
+  mountInningsBreakCard();
+  updateInningsBreakUI(doc);
 
   mountOpeningCard();
   updateOpeningUI(doc);

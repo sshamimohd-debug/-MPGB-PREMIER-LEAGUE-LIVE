@@ -2,13 +2,13 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<meta name="theme-color" content="#0b1020"/>
-<link rel="stylesheet" href="css/theme-dark.css"/>
+<meta name="theme-color" content="#2b6cff"/>
+<link rel="stylesheet" href="css/theme-light.css"/>
 <link rel="stylesheet" href="css/app.css"/>
 <title>MPGB Premier League</title>  <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="shortcut icon" href="favicon.ico">
-  <meta name="theme-color" content="#0b1020"/>
+  <meta name="theme-color" content="#2b6cff"/>
   <link rel="apple-touch-icon" href="assets/icons/icon-180.png"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
 </head>
@@ -71,34 +71,24 @@
     </details>
   </div>
 
-  <!-- Live + Upcoming (Cricbuzz-like) -->
-  <div class="grid cols2" style="margin-top:14px">
-    <div class="card">
-      <div class="row wrap" style="justify-content:space-between">
-        <div>
-          <div class="h1" style="margin:0">🔴 Live Now</div>
-          <div class="muted small">Live match yahin दिखेगा.</div>
-        </div>
-        <a class="btn ghost" href="live.html">Open Live</a>
+  <!-- Matches: Live / Upcoming / Completed (Cricbuzz-like tabs) -->
+  <div class="card" style="margin-top:14px">
+    <div class="row wrap" style="justify-content:space-between; align-items:center">
+      <div>
+        <div class="h1" style="margin:0">Matches</div>
+        <div class="muted small">Live / Upcoming / Completed</div>
       </div>
-      <div class="sep"></div>
-      <div id="liveBox" class="muted small">Loading…</div>
+      <a class="btn ghost" href="schedule.html">All Fixtures</a>
+    </div>
+    <div class="sep"></div>
+
+    <div class="segTabs" id="homeTabs" role="tablist" aria-label="Match filters">
+      <button class="seg on" data-tab="LIVE" role="tab" aria-selected="true">Live</button>
+      <button class="seg" data-tab="UPCOMING" role="tab" aria-selected="false">Upcoming</button>
+      <button class="seg" data-tab="COMPLETED" role="tab" aria-selected="false">Completed</button>
     </div>
 
-    <div class="card">
-      <div class="row wrap" style="justify-content:space-between">
-        <div>
-          <div class="h1" style="margin:0">Upcoming</div>
-          <div class="muted small">Next fixtures</div>
-        </div>
-        <a class="btn ghost" href="schedule.html">All</a>
-      </div>
-      <div class="sep"></div>
-      <div class="list" id="upcomingList"><div class="muted small">Loading…</div></div>
-      <div class="sep"></div>
-      <div class="h1" style="font-size:16px; margin:0">Recent</div>
-      <div class="list" id="recentList"><div class="muted small">—</div></div>
-    </div>
+    <div class="list" id="homeMatchList"><div class="muted small">Loading…</div></div>
   </div>
 
   <div class="footer-note">Premium mobile UI • Real-time via Firebase • Offline-ready</div>
