@@ -251,15 +251,44 @@
 
     <div class="wizBody">
       <section class="wizPane" data-pane="toss">
-        <div class="wizH">Toss</div>
-        <div class="wizP">Toss winner aur decision select karo.</div>
-        <div class="wizGrid2">
-          <button class="wizBtn" data-pick="tossTeamA" id="btnTossA">Team A</button>
-          <button class="wizBtn" data-pick="tossTeamB" id="btnTossB">Team B</button>
+        <div class="tossBar">
+          <div class="tossBarLeft">←</div>
+          <div class="tossBarTitle">Toss</div>
+          <div class="tossBarRight">📷</div>
         </div>
-        <div class="wizGrid2">
-          <button class="wizBtn" data-pick="bat">Bat</button>
-          <button class="wizBtn" data-pick="bowl">Bowl</button>
+
+        <div class="tossBody">
+          <div class="tossQ">Who won the toss?</div>
+          <div class="tossGrid2">
+            <button class="tossCard" data-pick="tossTeamA" id="btnTossA">
+              <div class="tossLogo">A</div>
+              <div class="tossName">Team A</div>
+            </button>
+            <button class="tossCard" data-pick="tossTeamB" id="btnTossB">
+              <div class="tossLogo">B</div>
+              <div class="tossName">Team B</div>
+            </button>
+          </div>
+
+          <div class="tossQ" style="margin-top:14px">Winner of the toss elected to?</div>
+          <div class="tossGrid2">
+            <button class="tossCard" data-pick="bat">
+              <div class="tossIcon">🏏</div>
+              <div class="tossName">Bat</div>
+            </button>
+            <button class="tossCard" data-pick="bowl">
+              <div class="tossIcon">🎯</div>
+              <div class="tossName">Bowl</div>
+            </button>
+          </div>
+
+          <div class="tossHint">Tap the coin to flip</div>
+          <div class="tossCoin" aria-hidden="true">🪙</div>
+
+          <div class="tossBottom">
+            <div class="tossHelp">Need help?</div>
+            <div class="tossLets">Let's play</div>
+          </div>
         </div>
       </section>
 

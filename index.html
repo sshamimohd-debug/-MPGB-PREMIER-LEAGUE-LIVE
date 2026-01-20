@@ -72,34 +72,24 @@
     <button class="btn ghost full" id="btnInfo" type="button">ℹ️ Info</button>
   </div>
 
-  <!-- Live + Upcoming (Cricbuzz-like) -->
-  <div class="grid cols2" style="margin-top:14px">
-    <div class="card">
-      <div class="row wrap" style="justify-content:space-between">
-        <div>
-          <div class="h1" style="margin:0">🔴 Live Now</div>
-          <div class="muted small">Live match yahin दिखेगा.</div>
-        </div>
-        <a class="btn ghost" href="live.html">Open Live</a>
+  <!-- Matches (CREX/Cricbuzz style tabs) -->
+  <div class="card matchesCard" style="margin-top:14px">
+    <div class="row wrap" style="justify-content:space-between">
+      <div>
+        <div class="h1" style="margin:0">Matches</div>
+        <div class="muted small" id="matchesHint">Live / Upcoming / Completed</div>
       </div>
-      <div class="sep"></div>
-      <div id="liveBox" class="muted small">Loading…</div>
+      <a class="btn ghost" href="schedule.html">All</a>
     </div>
 
-    <div class="card">
-      <div class="row wrap" style="justify-content:space-between">
-        <div>
-          <div class="h1" style="margin:0">Upcoming</div>
-          <div class="muted small">Next fixtures</div>
-        </div>
-        <a class="btn ghost" href="schedule.html">All</a>
-      </div>
-      <div class="sep"></div>
-      <div class="list" id="upcomingList"><div class="muted small">Loading…</div></div>
-      <div class="sep"></div>
-      <div class="h1" style="font-size:16px; margin:0">Recent</div>
-      <div class="list" id="recentList"><div class="muted small">—</div></div>
+    <div class="segTabs" role="tablist" aria-label="Match filters">
+      <button class="segBtn active" type="button" data-tab="live" role="tab" aria-selected="true">Live</button>
+      <button class="segBtn" type="button" data-tab="upcoming" role="tab" aria-selected="false">Upcoming</button>
+      <button class="segBtn" type="button" data-tab="completed" role="tab" aria-selected="false">Completed</button>
     </div>
+
+    <div class="sep"></div>
+    <div class="list" id="matchesList"><div class="muted small">Loading…</div></div>
   </div>
 
   <div class="footer-note">Premium mobile UI • Real-time via Firebase • Offline-ready</div>

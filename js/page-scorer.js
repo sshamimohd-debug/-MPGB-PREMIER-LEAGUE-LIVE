@@ -672,10 +672,9 @@ function mountInningsBreakCard(){
   _breakMounted = true;
 
   br.querySelector("#btnStart2nd")?.addEventListener("click", ()=>{
-    // Open the short wizard (Break -> Opening -> Ready)
-    if(!CURRENT_DOC) return;
-    ensureWizard();
-    if(WIZARD) WIZARD.open(CURRENT_DOC);
+    // UX: 2nd innings start par opening selection scorer page par hi hoga (no wizard)
+    const oc = document.getElementById("openingCard");
+    if(oc){ oc.scrollIntoView({behavior:'smooth', block:'start'}); }
   });
 }
 
@@ -786,12 +785,6 @@ function updateOpeningUI(doc){
   const idx = Number(st?.inningsIndex||0);
   const hasToss = !!(st.toss || doc?.tossWinner);
   const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
-
-  // ✅ UX: 2nd innings me opening selection wizard se hoga (Break -> Opening). Is page par opening card hide.
-  if(idx>=1 && hasToss && hasXI){
-    card.style.display = "none";
-    return;
-  }
 
   const inn = currentInnings(doc);
   const of = inn?.onField || {};

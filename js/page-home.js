@@ -6,6 +6,39 @@ setActiveNav("home");
 
 const FB = getFB();
 
+// Home: Match tabs (UI-only)
+let ACTIVE_TAB = "live"; // live | upcoming | completed
+
+function normStatus(raw){
+  const s = (raw||"").toString().trim().toUpperCase();
+  // LIVE variants
+  if(s.includes("LIVE") || s.includes("IN_PROGRESS") || s.includes("INPROGRESS") || s.includes("RUNNING")) return "LIVE";
+  // COMPLETED variants
+  if(s.includes("COMPLETED") || s.includes("FINISHED") || s.includes("RESULT") || s.includes("DONE")) return "COMPLETED";
+  // UPCOMING variants
+  if(s.includes("UPCOMING") || s.includes("SCHEDULED") || s.includes("FIXTURE")) return "UPCOMING";
+  // Fallbacks
+  return s || "UPCOMING";
+}
+
+function wireMatchTabs(){
+  const wrap = document.querySelector(".segTabs");
+  if(!wrap) return;
+  const buttons = Array.from(wrap.querySelectorAll(".segBtn[data-tab]"));
+  const setTab = (tab)=>{
+    ACTIVE_TAB = tab;
+    buttons.forEach(b=>{
+      const on = (b.dataset.tab === tab);
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+  };
+  buttons.forEach(b=>{
+    b.addEventListener("click", ()=> setTab(b.dataset.tab));
+  });
+  setTab(ACTIVE_TAB);
+}
+
 
 function wireInfoModal(){
   const btn = document.getElementById("btnInfo");
@@ -75,11 +108,14 @@ function renderFromMatches(t, docs){
   // Decide a "best" match for app-wide context:
   // LIVE (latest updated) → else next UPCOMING → else latest COMPLETED.
   const all = Array.isArray(docs) ? docs : [];
-  const pickLive = all.filter(m=>m.status==="LIVE")
+  const pickLive = all.filter(m=> normStatus(m.status)==="LIVE")
     .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
-  const pickUp = all.filter(m=>m.status!=="LIVE" && m.status!=="COMPLETED")
+  const pickUp = all.filter(m=>{
+      const st = normStatus(m.status);
+      return st!=="LIVE" && st!=="COMPLETED";
+    })
     .sort((a,b)=> (a.matchId||"").localeCompare(b.matchId||""))[0];
-  const pickDone = all.filter(m=>m.status==="COMPLETED")
+  const pickDone = all.filter(m=> normStatus(m.status)==="COMPLETED")
     .sort((a,b)=> (b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0];
   const best = pickLive || pickUp || pickDone;
 
@@ -89,75 +125,118 @@ function renderFromMatches(t, docs){
     wireBottomNav(best.matchId);
   }
 
-  // live: any LIVE, choose latest updated
-  const live = all.filter(d=>d.status==="LIVE");
-  live.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
-  const liveBox = document.getElementById("liveBox");
 
-  if(live.length===0){
-    liveBox.innerHTML = `<div class="muted small">No live match right now.</div>`;
-  } else {
-    const m = live[0];
+  // Build filtered lists
+  const live = all.filter(d=> normStatus(d.status)==="LIVE")
+    .sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+  const upcoming = all.filter(d=>{
+      const st = normStatus(d.status);
+      return st!=="COMPLETED" && st!=="LIVE";
+    })
+    .sort((a,b)=> (a.matchId||"").localeCompare(b.matchId||""));
+  const completed = all.filter(d=> normStatus(d.status)==="COMPLETED")
+    .sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+
+  const listEl = document.getElementById("matchesList");
+  if(!listEl) return;
+
+  const fmtRR = (n)=>{
+    const x = Number(n||0);
+    if(!isFinite(x)) return "0.00";
+    return (Math.round(x*100)/100).toFixed(2);
+  };
+
+  const statusBadge = (st)=>{
+    if(st==="LIVE") return `<span class="mDot live"></span><span class="mSt live">LIVE</span>`;
+    if(st==="COMPLETED") return `<span class="mDot done"></span><span class="mSt done">COMPLETED</span>`;
+    return `<span class="mDot up"></span><span class="mSt up">UPCOMING</span>`;
+  };
+
+  const resultLine = (m)=>{
+    const txt = m?.result?.text || m?.state?.result?.text || m?.summary?.resultText || m?.summary?.result || "";
+    return (txt||"").toString().trim();
+  };
+
+  const scoreLine = (m)=>{
     const sum = m.summary || {};
-    liveBox.innerHTML = `
-      <div class="item">
-        <div class="left">
-          <span class="badge live">🔴 LIVE</span>
-          <div>
-            <div><b>${esc(m.a)} vs ${esc(m.b)}</b> <span class="muted small">• Group ${esc(m.group)} • ${esc(m.time)}</span></div>
-            <div class="muted small">${esc(sum.batting||m.a)}: <b>${esc(sum.scoreText||"0/0")}</b> <span class="muted">(${esc(sum.oversText||"0.0/10")})</span> • RR ${esc(sum.rr||0)}</div>
-          </div>
+    const batting = sum.batting || m.battingFirst || m.a;
+    const scoreText = sum.scoreText || "0/0";
+    const oversText = sum.oversText || `0.0/${t.oversPerInnings||10}`;
+    const rr = (sum.rr!=null) ? fmtRR(sum.rr) : null;
+    const rrTxt = rr ? ` • RR ${rr}` : "";
+    return `${esc(batting)}: <b>${esc(scoreText)}</b> <span class="muted">(${esc(oversText)})</span>${rrTxt}`;
+  };
+
+  const matchRow = (m)=>{
+    const st = normStatus(m.status);
+    const sum = m.summary || {};
+    const res = resultLine(m);
+    const sub = (st==="COMPLETED" && res)
+      ? `<div class="mSub done">${esc(res)}</div>`
+      : (st==="LIVE")
+        ? `<div class="mSub">${scoreLine(m)}</div>`
+        : `<div class="mSub">Group ${esc(m.group)} • ${esc(m.time)} • Match ${esc(m.matchId)}</div>`;
+
+    const right = (st==="LIVE")
+      ? `<div class="mActions">
+           <a class="mBtn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
+           <a class="mBtn ghost" href="live.html?match=${encodeURIComponent(m.matchId)}">Live</a>
+         </div>`
+      : `<div class="mActions">
+           <a class="mBtn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
+         </div>`;
+
+    return `
+      <div class="mRow">
+        <div class="mL">
+          <div class="mTop">${statusBadge(st)}<span class="mMeta">${esc(m.group||"")}${m.group?" • ":""}${esc(m.time||"")}</span></div>
+          <div class="mTeams"><b>${esc(m.a)}</b> <span class="vs">vs</span> <b>${esc(m.b)}</b></div>
+          ${sub}
         </div>
-        <div class="kpi">
-          <a class="btn" href="summary.html?match=${encodeURIComponent(m.matchId)}">Live</a>
-          <a class="btn ghost" href="live.html?match=${encodeURIComponent(m.matchId)}">Ball-by-ball</a>
-        </div>
+        ${right}
       </div>
     `;
+  };
+
+  const renderTab = ()=>{
+    const tab = (ACTIVE_TAB||"live").toLowerCase();
+    const list = (tab==="completed") ? completed : (tab==="upcoming") ? upcoming : live;
+
+    if(list.length===0){
+      const msg = (tab==="completed") ? "No completed matches yet." : (tab==="upcoming") ? "No upcoming fixtures found." : "No live match right now.";
+      listEl.innerHTML = `<div class="muted small">${esc(msg)}</div>`;
+      return;
+    }
+
+    const limit = (tab==="live") ? 8 : (tab==="upcoming") ? 12 : 12;
+    listEl.innerHTML = list.slice(0, limit).map(matchRow).join("");
+  };
+
+  // Re-render on tab changes
+  renderTab();
+  // Lightweight tab listener (no extra global state)
+  const tabs = document.querySelector(".segTabs");
+  if(tabs && !tabs.__wired){
+    tabs.__wired = true;
+    tabs.addEventListener("click", (e)=>{
+      const b = e.target?.closest?.(".segBtn[data-tab]");
+      if(!b) return;
+      ACTIVE_TAB = (b.dataset.tab||"live");
+      renderTab();
+    });
   }
-
-  // upcoming: earliest by matchId order but only UPCOMING
-  const upcoming = all.filter(d=>d.status!=="COMPLETED" && d.status!=="LIVE");
-  upcoming.sort((a,b)=> a.matchId.localeCompare(b.matchId));
-  const upEl = document.getElementById("upcomingList");
-  upEl.innerHTML = upcoming.slice(0,10).map(m=>`
-    <div class="item">
-      <div class="left">
-        <span class="badge up">🕒 UPCOMING</span>
-        <div>
-          <div><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
-          <div class="muted small">Group ${esc(m.group)} • ${esc(m.time)} • Match ${esc(m.matchId)}</div>
-        </div>
-      </div>
-      <a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">Open</a>
-    </div>
-  `).join("") || `<div class="muted small">No upcoming fixtures found.</div>`;
-
-  const recent = all.filter(d=>d.status==="COMPLETED");
-  recent.sort((a,b)=> (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
-  const rEl = document.getElementById("recentList");
-  rEl.innerHTML = recent.slice(0,6).map(m=>`
-    <div class="item">
-      <div class="left">
-        <span class="badge done">✅ DONE</span>
-        <div>
-          <div><b>${esc(m.a)} vs ${esc(m.b)}</b></div>
-          <div class="muted small">Match ${esc(m.matchId)} • Group ${esc(m.group)} • ${esc(m.time)}</div>
-        </div>
-      </div>
-      <a class="btn ghost" href="summary.html?match=${encodeURIComponent(m.matchId)}">Summary</a>
-    </div>
-  `).join("") || `<div class="muted small">No completed matches yet.</div>`;
 }
 
 (async function(){
   badgeState();
   wireInfoModal();
+  wireMatchTabs();
   const t = await loadTournament();
   renderStatic(t);
 
   if(!FB){
-    document.getElementById("liveBox").textContent = "Firebase not configured. Configure js/firebase-config.js and redeploy.";
+    const el = document.getElementById("matchesList");
+    if(el) el.textContent = "Firebase not configured. Configure js/firebase-config.js and redeploy.";
     return;
   }
 

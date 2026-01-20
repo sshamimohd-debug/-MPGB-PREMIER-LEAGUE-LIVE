@@ -46,11 +46,18 @@
 .wizDots .d{ width:8px; height:8px; border-radius:999px; background: rgba(255,255,255,.18); }
 .wizDots .d.on{ background: rgba(255,165,0,.95); box-shadow: 0 0 14px rgba(255,165,0,.45); }
 
-.wizList{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.wizPill{ height:42px; border-radius:999px; border:1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center;
-  font-weight:700; cursor:pointer; user-select:none;
-}
+.wizList{ display:flex; flex-direction:column; gap:10px; }
+
+/* XI row */
+.wizPlayerRow{ display:grid; grid-template-columns:40px 1fr 42px; gap:12px; align-items:center; padding:10px 12px; border-radius:16px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); cursor:pointer; }
+.wizPlayerRow.on{ border-color: rgba(30,144,255,.55); background: rgba(30,144,255,.16); }
+.wizAv{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center; font-weight:900; color:#d6e6ff; background: linear-gradient(180deg, rgba(30,144,255,.35), rgba(30,144,255,.10)); border:1px solid rgba(30,144,255,.35); }
+.wizPName{ font-size:14px; font-weight:800; letter-spacing:.2px; }
+.wizPToggle{ width:42px; height:34px; border-radius:999px; display:grid; place-items:center; font-weight:900; border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); }
+.wizPlayerRow.on .wizPToggle{ border-color: rgba(0,255,160,.35); background: rgba(0,255,160,.10); }
+
+/* legacy pills (kept for backward compatibility) */
+.wizPill{ height:42px; border-radius:999px; border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; padding:0 10px; font-size:13px; cursor:pointer; user-select:none; }
 .wizPill.on{ background: rgba(30,144,255,.18); border-color: rgba(30,144,255,.45); }
 
 .wizBigOk{ margin-top:10px; padding:14px; border-radius:16px; background: rgba(0,255,160,.10);
@@ -65,8 +72,99 @@
 
 @media (max-width: 420px){
   .wizRow{ grid-template-columns: 1fr; }
+
+/* Toss screen (wizard) – looks like pro mobile app */
+.wizPane[data-pane="toss"]{
+  background:#fff;
+  color:#111;
+  border-radius:16px;
+  overflow:hidden;
+}
+.wizPane[data-pane="toss"] .tossBar{
+  height:56px;
+  background:#e53935;
+  color:#fff;
+  display:grid;
+  grid-template-columns:48px 1fr 48px;
+  align-items:center;
+  padding:0 10px;
+  font-weight:800;
+}
+.wizPane[data-pane="toss"] .tossBarLeft,
+.wizPane[data-pane="toss"] .tossBarRight{
+  opacity:.95;
+  font-size:18px;
+  text-align:center;
+}
+.wizPane[data-pane="toss"] .tossBarTitle{
+  text-align:center;
+  font-size:18px;
+}
+.wizPane[data-pane="toss"] .tossBody{
+  padding:14px;
+}
+.wizPane[data-pane="toss"] .tossQ{
+  font-size:15px;
+  margin:10px 0 8px;
+}
+.wizPane[data-pane="toss"] .tossGrid2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.wizPane[data-pane="toss"] .tossCardBtn{
+  background:#fff;
+  border:1px solid #e6e6e6;
+  border-radius:12px;
+  padding:14px 10px;
+  text-align:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  cursor:pointer;
+}
+.wizPane[data-pane="toss"] .tossCardBtn .tossCircle{
+  width:72px;
+  height:72px;
+  border-radius:999px;
+  margin:0 auto 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  font-weight:900;
+  color:#fff;
+}
+.wizPane[data-pane="toss"] .tossCardBtn .tossLbl{
+  font-size:14px;
+  color:#333;
+}
+.wizPane[data-pane="toss"] .tossCardBtn.sel{
+  outline:2px solid rgba(229,57,53,.35);
+  border-color:rgba(229,57,53,.35);
+}
+.wizPane[data-pane="toss"] .tossCoin{
+  width:110px;
+  height:110px;
+  border-radius:999px;
+  margin:16px auto 6px;
+  background:radial-gradient(circle at 30% 30%, #f5f5f5, #cfcfcf);
+  border:1px solid #d8d8d8;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  color:#555;
+}
+.wizPane[data-pane="toss"] .tossHint{
+  text-align:center;
+  color:#666;
+  font-size:13px;
+  margin:6px 0 8px;
+}
+
+/* Match wizard card tweaks for light toss pane */
+.wizCard{ overflow:hidden; }
+
   .wizRow label{ margin-bottom:4px; }
-  .wizList{ grid-template-columns:1fr; }
 }
 
 /* =========================
@@ -209,3 +307,20 @@ body.modalOpen{ overflow:hidden; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
 }
 
+
+
+/* Toss pane (app-like) */
+.wizPane[data-pane="toss"]{ padding:0; }
+.tossBar{ height:52px; display:grid; grid-template-columns:44px 1fr 44px; align-items:center; background:#e53935; color:#fff; border-radius:18px 18px 12px 12px; padding:0 8px; margin-bottom:12px; }
+.tossBarLeft,.tossBarRight{ display:grid; place-items:center; font-size:18px; opacity:.95; }
+.tossBarTitle{ font-weight:900; letter-spacing:.3px; text-align:center; }
+.tossQ{ color:#0b1220; font-weight:900; margin:10px 0 10px; }
+.tossGrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.tossCard{ background:#fff; color:#0b1220; border-radius:14px; border:1px solid rgba(0,0,0,.10); padding:14px; min-height:110px; display:grid; place-items:center; gap:10px; }
+.tossTeamBubble{ width:70px; height:70px; border-radius:999px; display:grid; place-items:center; font-weight:900; font-size:24px; color:#fff; }
+.tossTeamName{ font-weight:800; }
+.tossPick{ width:70px; height:70px; border-radius:999px; display:grid; place-items:center; background:#e53935; color:#fff; font-size:28px; }
+.tossCard.sel{ outline:3px solid rgba(229,57,53,.35); }
+.tossNote{ margin-top:14px; color: rgba(0,0,0,.55); font-size:12px; }
+/* make toss pane visually light even inside dark wizard */
+.wizCard .tossWrap{ background:#ffffff; border-radius:18px; padding:12px; }
