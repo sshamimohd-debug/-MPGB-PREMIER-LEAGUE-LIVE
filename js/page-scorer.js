@@ -1,7 +1,7 @@
 import { initScorerWizard } from "./scorer-wizard.js";
 import { setActiveNav, qs, loadTournament } from "./util.js";
 import { getFB, watchMatch, addBall, undoBall, setMatchStatus, resetMatch, watchAuth, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards } from "./store-fb.js";
-import { renderScoreLine, renderCommentary } from "./renderers.js";
+import { renderScoreLine, renderCommentary, renderScorecard } from "./renderers.js";
 
 setActiveNav("scorer");
 const FB = getFB();
@@ -54,6 +54,248 @@ function showState(msg, ok=true){
   if(!el) return;
   el.textContent = msg;
   el.style.color = ok ? "var(--muted)" : "#ff9a9a";
+}
+
+// -----------------------------
+// 1st Innings Complete Overlay (UI-only)
+// Shows full-screen scorecard for Innings 1 and then lets user start Innings 2 by choosing openers + bowler.
+// STRICT: does NOT change scoring logic / Firebase schema.
+// -----------------------------
+let _i1Overlay = null;
+let _i1ShownSig = null;
+
+function _safeClone(obj){
+  try{ return JSON.parse(JSON.stringify(obj)); }catch(e){ return obj; }
+}
+
+function _removeI1Overlay(){
+  try{ _i1Overlay?.remove(); }catch(e){}
+  _i1Overlay = null;
+}
+
+function _isI1Done(st, i0){
+  const overs = Number(st?.oversPerInnings || 10);
+  const totalBalls = Math.max(0, overs * 6);
+  return (
+    Number(i0?.balls||0) >= totalBalls ||
+    Number(i0?.wkts||0) >= 10 ||
+    Number(st?.inningsIndex||0) >= 1
+  );
+}
+
+function _needsOpening(inn){
+  const on = inn?.onField || {};
+  const has = !!(on.striker && on.nonStriker && on.bowler);
+  return !(inn?.openingDone) && !has;
+}
+
+function _buildSelectOptions(list, selected=""){
+  const arr = Array.isArray(list) ? list : [];
+  return arr.map(name=>{
+    const sel = (selected && name===selected) ? "selected" : "";
+    return `<option value="${esc(name)}" ${sel}>${esc(name)}</option>`;
+  }).join("");
+}
+
+function _defaultTwoDifferent(arr){
+  const a = Array.isArray(arr) ? arr : [];
+  const s = a[0] || "";
+  const ns = (a.find(x=>x && x!==s) || a[1] || "");
+  return { s, ns };
+}
+
+function showInnings1CompleteOverlay(doc){
+  const st = doc?.state || {};
+  const innings = Array.isArray(st.innings) ? st.innings : [];
+  const i0 = innings[0];
+  const i1 = innings[1];
+  if(!i0 || !i1) return;
+
+  // Only show if currently moved to innings 2 AND opening not set yet
+  if(Number(st.inningsIndex||0) !== 1) return;
+  if(!_isI1Done(st, i0)) return;
+  if(!_needsOpening(i1)) return;
+
+  const sig = `${matchId}:${Number(i0.runs||0)}:${Number(i0.wkts||0)}:${Number(i0.balls||0)}`;
+  if(_i1ShownSig === sig && _i1Overlay) return;
+  _i1ShownSig = sig;
+
+  // If overlay already exists, refresh content safely
+  _removeI1Overlay();
+
+  // Toast
+  showState("✅ 1st Innings complete. Scorecard dekho, phir 2nd innings start karo.", true);
+
+  const overlay = document.createElement("div");
+  overlay.className = "overlay fullscreen";
+  overlay.id = "i1CompleteOverlay";
+
+  // Render scorecard with inningsIndex forced to 0 (so it shows Innings 1 block by default)
+  const tmp = _safeClone(doc);
+  if(tmp?.state) tmp.state.inningsIndex = 0;
+  const scorecardHTML = renderScorecard(tmp);
+
+  const battingTeam = i0.batting || doc.a || "Team A";
+  const oversLimit = Number(st.oversPerInnings || 10);
+  const target = Number(i0.runs||0) + 1;
+
+  overlay.innerHTML = `
+    <div class="popup fullscreen">
+      <div class="scTop">
+        <div>
+          <div class="h1" style="font-size:18px">🏏 End of 1st Innings</div>
+          <div class="muted small" style="margin-top:2px">
+            <b>${esc(battingTeam)}</b> • ${Number(i0.runs||0)}/${Number(i0.wkts||0)} (${esc(i0.overs||"0.0")}/${esc(oversLimit)})
+            <span class="muted">&nbsp;•&nbsp;</span> Target: <b>${esc(target)}</b>
+          </div>
+        </div>
+        <button class="btn ghost" id="i1Close" title="Close">✕</button>
+      </div>
+
+      <div class="scBody">
+        ${scorecardHTML}
+      </div>
+
+      <div class="scBottom">
+        <div class="muted small">
+          Target <b>${esc(target)}</b> • Overs <b>${esc(oversLimit)}</b>
+        </div>
+        <div class="row" style="gap:10px; justify-content:flex-end; margin-top:10px">
+          <button class="btn" id="i1Start2">Start 2nd Innings</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  _i1Overlay = overlay;
+
+  overlay.querySelector("#i1Close")?.addEventListener("click", ()=>{
+    // Allow closing if user wants to undo last ball etc.
+    _removeI1Overlay();
+  });
+
+  overlay.querySelector("#i1Start2")?.addEventListener("click", ()=>{
+    renderInnings2Setup(overlay, doc);
+  });
+}
+
+function renderInnings2Setup(overlay, doc){
+  const st = doc?.state || {};
+  const innings = Array.isArray(st.innings) ? st.innings : [];
+  const i1 = innings[1];
+  if(!i1){
+    showState("2nd innings data missing.", false);
+    return;
+  }
+
+  const batTeam = i1.batting || (doc.b||"");
+  const bowlTeam = i1.bowling || (doc.a||"");
+  const batXI = st.playingXI?.[batTeam] || [];
+  const bowlXI = st.playingXI?.[bowlTeam] || [];
+
+  const def = _defaultTwoDifferent(batXI);
+  const striker = def.s;
+  const nonStriker = def.ns;
+  const bowler = bowlXI?.[0] || "";
+
+  const wkId = st.playingXIMeta?.[bowlTeam]?.wicketKeeperId || "";
+  const bowlFiltered = bowlXI.filter(x=>x && x!==wkId);
+
+  overlay.querySelector(".popup")?.classList.add("setupMode");
+  overlay.querySelector(".popup").innerHTML = `
+      <div class="scTop">
+        <div>
+          <div class="h1" style="font-size:18px">🏏 Start 2nd Innings</div>
+          <div class="muted small" style="margin-top:2px">${esc(batTeam)} batting • ${esc(bowlTeam)} bowling</div>
+        </div>
+        <button class="btn ghost" id="i2Back" title="Back">←</button>
+      </div>
+
+      <div class="scBody">
+        <div class="card" style="padding:12px">
+          <div class="muted small">Select opening batsmen and bowler</div>
+
+          <div class="row wrap" style="gap:10px; margin-top:10px">
+            <div style="flex:1; min-width:220px">
+              <div class="muted small">Striker</div>
+              <select class="input" id="i2Striker">${_buildSelectOptions(batXI, striker)}</select>
+            </div>
+
+            <div style="flex:1; min-width:220px">
+              <div class="muted small">Non-striker</div>
+              <select class="input" id="i2Non">${_buildSelectOptions(batXI, nonStriker)}</select>
+            </div>
+
+            <div style="flex:1; min-width:220px">
+              <div class="muted small">Opening Bowler</div>
+              <select class="input" id="i2Bowler">${_buildSelectOptions(bowlFiltered, bowler)}</select>
+              ${wkId ? `<div class="muted small" style="margin-top:6px">Note: Wicket-keeper cannot bowl (auto excluded).</div>`:""}
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:flex-end; gap:10px; margin-top:14px">
+            <button class="btn" id="i2StartNow">Start Scoring</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="scBottom">
+        <div class="muted small">Tip: Setup ke baad scoring turant start ho jayegi.</div>
+      </div>
+  `;
+
+  overlay.querySelector("#i2Back")?.addEventListener("click", ()=>{
+    // Re-render scorecard view
+    showInnings1CompleteOverlay(doc);
+  });
+
+  overlay.querySelector("#i2StartNow")?.addEventListener("click", async ()=>{
+    const s = overlay.querySelector("#i2Striker")?.value?.trim();
+    const ns = overlay.querySelector("#i2Non")?.value?.trim();
+    const bo = overlay.querySelector("#i2Bowler")?.value?.trim();
+    if(!s || !ns || !bo){
+      showState("2nd innings setup: striker, non-striker aur bowler select karo.", false);
+      return;
+    }
+    if(s===ns){
+      showState("Striker aur Non-striker same nahi ho sakte.", false);
+      return;
+    }
+    try{
+      await setOpeningSetup(FB, matchId, s, ns, bo);
+      _removeI1Overlay();
+      showState("✅ 2nd innings started. Scoring shuru karo.", true);
+    }catch(err){
+      showState(err?.message || "2nd innings setup failed", false);
+    }
+  });
+}
+
+function maybeHandleInningsBreakUI(doc){
+  const st = doc?.state;
+  if(!st) return;
+
+  const idx = Number(st.inningsIndex||0);
+  const innings = Array.isArray(st.innings) ? st.innings : [];
+
+  // If user undoes back to innings 1, close overlay and reset signature.
+  if(idx !== 1){
+    _removeI1Overlay();
+    _i1ShownSig = null;
+    return;
+  }
+
+  const i0 = innings[0];
+  const i1 = innings[1];
+  if(!i0 || !i1) return;
+
+  // Show only when needed
+  if(_needsOpening(i1) && _isI1Done(st, i0)){
+    showInnings1CompleteOverlay(doc);
+  } else {
+    // If opening already done, ensure overlay is not blocking
+    _removeI1Overlay();
+  }
 }
 
 function renderFreeHitBadge(doc){
@@ -1348,6 +1590,9 @@ function render(doc){
       renderScoreLine({ matchId: doc.matchId, a: doc.a, b: doc.b, group: doc.group, time: doc.time, status: doc.status, summary }, st)
       + renderCommentary(st, 8);
   }
+  // ✅ Innings Break UI (Scorecard + Start 2nd Innings)
+  maybeHandleInningsBreakUI(doc);
+
 }
 
 watchMatch(FB, matchId, render);

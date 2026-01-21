@@ -444,3 +444,44 @@ body.modalOpen{ overflow:hidden; }
 }
 
 >>>>>>> 572fc886489550220fcbeb79eb46f419aa1fda15
+
+
+
+/* =========================
+   Innings Complete Fullscreen Overlay (Scorer)
+   ========================= */
+.overlay.fullscreen{
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+}
+.popup.fullscreen{
+  width: min(860px, 100%);
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.popup.fullscreen .scTop{
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+.popup.fullscreen .scBody{
+  flex: 1;
+  overflow: auto;
+  padding: 12px 14px;
+}
+.popup.fullscreen .scBottom{
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(0,0,0,.06);
+}
+.btn.ghost{
+  background: transparent !important;
+  border: 1px solid rgba(0,0,0,.12) !important;
+}
