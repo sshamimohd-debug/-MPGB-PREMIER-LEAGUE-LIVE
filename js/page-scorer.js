@@ -1,6 +1,6 @@
 import { initScorerWizard } from "./scorer-wizard.js";
 import { setActiveNav, qs, loadTournament } from "./util.js";
-import { getFB, watchMatch, watchAuth, addBall, undoBall, setMatchStatus, resetMatch, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards } from "./store-fb.js";
+import { getFB, watchMatch, addBall, undoBall, setMatchStatus, resetMatch, watchAuth, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards } from "./store-fb.js";
 import { renderScoreLine, renderCommentary } from "./renderers.js";
 
 setActiveNav("scorer");
@@ -16,6 +16,15 @@ const matchId = params.get("matchId") || params.get("match") || "A1";
 
 let TOURNAMENT = null;
 let SQUADS = {}; // team -> [15]
+
+// Preload tournament data (needed for squads in setup wizard)
+try {
+  TOURNAMENT = await loadTournament();
+  SQUADS = TOURNAMENT?.squads || {};
+} catch (e) {
+  console.warn('Tournament preload failed (wizard may show empty squads until loaded).', e);
+}
+
 let CURRENT_DOC = null;
 let LAST_STATUS = null;
 let _tossMounted = false;
