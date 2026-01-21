@@ -1,6 +1,6 @@
 import { initScorerWizard } from "./scorer-wizard.js";
 import { setActiveNav, qs, loadTournament } from "./util.js";
-import { getFB, watchMatch, addBall, undoBall, setMatchStatus, resetMatch, watchAuth, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards } from "./store-fb.js";
+import { getFB, watchMatch, watchAuth, addBall, undoBall, setMatchStatus, resetMatch, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards } from "./store-fb.js";
 import { renderScoreLine, renderCommentary } from "./renderers.js";
 
 setActiveNav("scorer");
