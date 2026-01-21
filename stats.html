@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#2b6cff"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="stylesheet" href="css/theme-light.css"/>
+<link rel="stylesheet" href="css/app.css"/>
+  <title>MPGB Premier League - Player Statistics</title>
+</head>
+<body data-page="stats">
+  <div class="topbar">
+    <a id="navLeft" href="index.html" aria-label="Back"></a>
+    <div class="brand">
+      <img class="logo" src="assets/icons/shield.svg" alt="logo"/>
+      <div>
+        <div class="title" id="brandTitle">MPGB Premier League</div>
+        <div class="muted small">Player Statistics</div>
+      </div>
+    </div>
+    <div id="navRight"></div>
+  </div>
+
+  <div class="nav">
+    <a class="chip" data-nav="home" href="index.html">Home</a>
+    <a class="chip" data-nav="schedule" href="schedule.html">Schedule</a>
+    <a class="chip" data-nav="points" href="points.html">Points</a>
+    <a class="chip" data-nav="stats" href="stats.html">Stats</a>
+    <a class="chip" data-nav="teams" href="teams.html">Teams</a>
+    <a class="chip" data-nav="venues" href="venues.html">Venues</a>
+    <a class="chip" data-nav="rules" href="rules.html">Rules</a>
+    <a class="chip" data-nav="admin" href="admin.html">Admin</a>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="row" style="gap:12px; flex-wrap:wrap; justify-content:space-between">
+        <div>
+          <div class="h1">Player Statistics</div>
+          <div class="muted small" id="statsMeta">Tournament-wide (auto from all matches)</div>
+        </div>
+        <div style="min-width:240px">
+          <label class="muted small">Team</label>
+          <select id="teamPick"></select>
+        </div>
+      </div>
+
+      <div class="kpi" style="margin-top:10px">
+        <button class="chip" id="tabStats">Statistics</button>
+        <button class="chip" id="tabSquad">Squad</button>
+      </div>
+
+      <div id="viewStats" style="margin-top:12px"></div>
+      <div id="viewSquad" style="margin-top:12px; display:none"></div>
+
+      <div class="footer-note">Data source: tournament.json squads + Firestore match scorecards</div>
+    </div>
+  </div>
+
+  <script type="module" src="js/page-stats.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register('./sw.js?v=20260121').catch(() => {});
+      });
+    }
+  </script>
+
+<!-- Bottom Navigation (UI only) -->
+<div class="bottomNav" role="navigation" aria-label="Primary">
+  <div class="bnWrap">
+    <a class="bnItem" href="index.html" data-nav="home"><div class="bnI">🏠</div><div class="bnT">Home</div></a>
+    <a class="bnItem" href="live.html" data-nav="live"><div class="bnI">📺</div><div class="bnT">Live</div></a>
+    <a class="bnItem" href="scorecard.html" data-nav="scorecard"><div class="bnI">📊</div><div class="bnT">Scorecard</div></a>
+    <a class="bnItem" href="schedule.html" data-nav="schedule"><div class="bnI">📅</div><div class="bnT">Schedule</div></a>
+    <a class="bnItem" href="admin.html" data-nav="admin"><div class="bnI">⚙️</div><div class="bnT">Admin</div></a>
+  </div>
+</div>
+<script>
+(()=>{
+  try{
+    const p=(location.pathname.split('/').pop()||'index.html');
+    document.querySelectorAll('.bottomNav .bnItem').forEach(a=>{
+      if((a.getAttribute('href')||'')===p) a.classList.add('active');
+    });
+  }catch(e){}
+})();
+</script>
+
+</body>
+</html>

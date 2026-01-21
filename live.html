@@ -1,0 +1,92 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#2b6cff"/>
+<link rel="stylesheet" href="css/theme-light.css"/>
+<link rel="stylesheet" href="css/app.css"/>
+<title>MPGB Premier League</title>  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="favicon.ico">
+  <meta name="theme-color" content="#2b6cff"/>
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
+</head><body>
+<div class="topbar">
+  <div class="inner">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <div class="title">MPGB Premier League</div>
+        <div class="sub">Cricket Tournament 2025-26</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a class="chip" data-nav="home" href="index.html">Home</a>
+      <a class="chip" data-nav="schedule" href="schedule.html">Schedule</a>
+      <a class="chip" data-nav="points" href="points.html">Points</a>
+      <a class="chip" data-nav="stats" href="stats.html">Stats</a>
+      <a class="chip" data-nav="teams" href="teams.html">Teams</a>
+      <a class="chip" data-nav="venues" href="venues.html">Venues</a>
+      <a class="chip" data-nav="rules" href="rules.html">Rules</a>
+      <a class="chip" data-nav="admin" href="admin.html">Admin</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="row wrap">
+      <div>
+        <div class="h1" id="mTitle">Live</div>
+        <div class="muted small" id="mMeta">—</div>
+      </div>
+      <div class="kpi">
+        <a class="btn ghost" id="btnSummary" href="#">Summary</a>
+        <a class="btn ghost" id="btnScorecard" href="#">Scorecard</a>
+        <a class="btn ghost" id="btnCommentary" href="#commentary">Commentary</a>
+      </div>
+    </div>
+    <div class="sep"></div>
+
+    <div class="row wrap" style="gap:8px">
+      <a class="pill" id="tabSummary" href="#">Summary</a>
+      <a class="pill" id="tabScorecard" href="#">Scorecard</a>
+      <a class="pill" id="tabCommentary" href="#" style="border-color:rgba(106,167,255,.65)">Commentary</a>
+    </div>
+
+    <div class="sep"></div>
+    <div id="liveTop" class="grid cols2"></div>
+    <div class="sep"></div>
+    <div id="commentary"></div>
+  </div>
+</div>
+<script type="module" src="js/page-live.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register('./sw.js?v=20260121').catch(() => {});
+      });
+    }
+  </script>
+
+<!-- Bottom Navigation (UI only) -->
+<div class="bottomNav" role="navigation" aria-label="Primary">
+  <div class="bnWrap">
+    <a class="bnItem" href="index.html" data-nav="home"><div class="bnI">🏠</div><div class="bnT">Home</div></a>
+    <a class="bnItem" href="live.html" data-nav="live"><div class="bnI">📺</div><div class="bnT">Live</div></a>
+    <a class="bnItem" href="scorecard.html" data-nav="scorecard"><div class="bnI">📊</div><div class="bnT">Scorecard</div></a>
+    <a class="bnItem" href="schedule.html" data-nav="schedule"><div class="bnI">📅</div><div class="bnT">Schedule</div></a>
+    <a class="bnItem" href="admin.html" data-nav="admin"><div class="bnI">⚙️</div><div class="bnT">Admin</div></a>
+  </div>
+</div>
+<script>
+(()=>{
+  try{
+    const p=(location.pathname.split('/').pop()||'index.html');
+    document.querySelectorAll('.bottomNav .bnItem').forEach(a=>{
+      if((a.getAttribute('href')||'')===p) a.classList.add('active');
+    });
+  }catch(e){}
+})();
+</script>
+
+</body></html>

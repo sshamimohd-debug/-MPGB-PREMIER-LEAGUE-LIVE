@@ -1,0 +1,90 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#2b6cff"/>
+<link rel="stylesheet" href="css/theme-light.css"/>
+<link rel="stylesheet" href="css/app.css"/>
+<title>MPGB Premier League</title>  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="favicon.ico">
+  <meta name="theme-color" content="#2b6cff"/>
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
+</head><body>
+<div class="topbar">
+  <div class="inner">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <div class="title">MPGB Premier League</div>
+        <div class="sub">Cricket Tournament 2025-26</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a class="chip" data-nav="home" href="index.html">Home</a>
+      <a class="chip" data-nav="schedule" href="schedule.html">Schedule</a>
+      <a class="chip" data-nav="points" href="points.html">Points</a>
+      <a class="chip" data-nav="stats" href="stats.html">Stats</a>
+      <a class="chip" data-nav="teams" href="teams.html">Teams</a>
+      <a class="chip" data-nav="venues" href="venues.html">Venues</a>
+      <a class="chip" data-nav="rules" href="rules.html">Rules</a>
+      <a class="chip" data-nav="admin" href="admin.html">Admin</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="h1">Rules & SOP (Tournament)</div>
+    <div class="muted small">Based on official IOM and tournament SOP.</div>
+    <div class="sep"></div>
+    <ul class="muted" style="line-height:1.8">
+      <li><b>10 overs</b> per innings</li>
+      <li><b>Powerplay:</b> first 3 overs</li>
+      <li><b>Max 2 overs</b> per bowler</li>
+      <li><b>Ball:</b> SIXIT tennis ball</li>
+      <li><b>No LBW</b></li>
+      <li><b>Tie:</b> Super Over (repeat until result)</li>
+      <li>Wide at umpire's discretion; no-ball for front-foot (as per SOP)</li>
+    </ul>
+    <div class="sep"></div>
+    <div class="muted small">Official PDFs:</div>
+    <div class="kpi">
+      <a class="pill" href="docs/IOM_02.01.2026_MPGB Premier League.pdf" target="_blank" rel="noopener">Open IOM</a>
+      <a class="pill" href="docs/MPGB_Premier_League_Revised_Schedule.pdf" target="_blank" rel="noopener">Open Revised Schedule</a>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { setActiveNav } from './js/util.js';
+setActiveNav('rules');
+</script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register('./sw.js?v=20260121').catch(() => {});
+      });
+    }
+  </script>
+
+<!-- Bottom Navigation (UI only) -->
+<div class="bottomNav" role="navigation" aria-label="Primary">
+  <div class="bnWrap">
+    <a class="bnItem" href="index.html" data-nav="home"><div class="bnI">🏠</div><div class="bnT">Home</div></a>
+    <a class="bnItem" href="live.html" data-nav="live"><div class="bnI">📺</div><div class="bnT">Live</div></a>
+    <a class="bnItem" href="scorecard.html" data-nav="scorecard"><div class="bnI">📊</div><div class="bnT">Scorecard</div></a>
+    <a class="bnItem" href="schedule.html" data-nav="schedule"><div class="bnI">📅</div><div class="bnT">Schedule</div></a>
+    <a class="bnItem" href="admin.html" data-nav="admin"><div class="bnI">⚙️</div><div class="bnT">Admin</div></a>
+  </div>
+</div>
+<script>
+(()=>{
+  try{
+    const p=(location.pathname.split('/').pop()||'index.html');
+    document.querySelectorAll('.bottomNav .bnItem').forEach(a=>{
+      if((a.getAttribute('href')||'')===p) a.classList.add('active');
+    });
+  }catch(e){}
+})();
+</script>
+
+</body></html>
