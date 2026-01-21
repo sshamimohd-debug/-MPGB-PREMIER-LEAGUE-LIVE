@@ -329,6 +329,76 @@ export async function setOpeningSetup(FB, matchId, striker, nonStriker, bowler){
   await _f.updateDoc(mRef, { state, updatedAt: _f.serverTimestamp() });
 }
 
+// ✅ Switch to 2nd innings (between-innings transition)
+// - Does NOT change scoring rules/logic.
+// - Only flips state.inningsIndex and resets 2nd-innings onField/openingDone flags.
+// - Caller should then call setOpeningSetup() for 2nd innings.
+export async function startSecondInnings(FB, matchId){
+  const { _f } = FB;
+  const mRef = matchRef(FB, matchId);
+  const snap = await _f.getDoc(mRef);
+  if(!snap.exists()) throw new Error("Match doc not found. Initialize first.");
+
+  const docData = snap.data();
+  const state = docData.state;
+  if(!state) throw new Error("State missing. Reset match first.");
+
+  const a = docData.a, b = docData.b;
+  const toss = state.toss || {};
+  if(!toss.winner) throw new Error("Toss pending. Pehele Toss save karo.");
+  const xiOk = !!(state.playingXI && state.playingXI[a]?.length===11 && state.playingXI[b]?.length===11);
+  if(!xiOk) throw new Error("Playing XI pending. Dono teams ke 11-11 players select karo.");
+
+  // Ensure innings array exists with bindings
+  state.innings = state.innings || [ emptyInnings(a,b), emptyInnings(b,a) ];
+
+  const oversLimit = Number(state.oversPerInnings||10);
+  const maxBalls = oversLimit * 6;
+  const i0 = state.innings[0];
+  if(!i0) throw new Error("Innings-1 missing. Reset match first.");
+  const innings1Done = Number(i0.wkts||0) >= 10 || Number(i0.balls||0) >= maxBalls;
+  if(!innings1Done) throw new Error("1st innings abhi complete nahi hui.");
+
+  // Move to innings 2
+  state.inningsIndex = 1;
+
+  // Bind teams for innings 2 (reverse of innings 1)
+  const bat1 = state.innings[0].batting || state.summary?.batting || docData.battingFirst || a;
+  const bowl1 = state.innings[0].bowling || state.summary?.bowling || docData.bowlingFirst || b;
+  state.innings[1] = state.innings[1] || emptyInnings(bowl1, bat1);
+  state.innings[1].batting = bowl1;
+  state.innings[1].bowling = bat1;
+
+  // Reset onField for innings 2 so UI forces fresh opening selection
+  state.innings[1].onField = state.innings[1].onField || {};
+  state.innings[1].onField.striker = "";
+  state.innings[1].onField.nonStriker = "";
+  state.innings[1].onField.bowler = "";
+  state.innings[1].onField.freeHit = false;
+  state.innings[1].onField.ballsThisOver = 0;
+  state.innings[1].onField.needNewBowler = false;
+  state.innings[1].onField.lastBowler = "";
+  state.innings[1].onField.needNextBatter = false;
+  state.innings[1].onField.vacantSlot = "";
+  state.innings[1].openingDone = false;
+
+  // Summary helpers
+  state.summary = state.summary || {};
+  state.summary.inningsIndex = 1;
+  state.summary.batting = state.innings[1].batting;
+  state.summary.bowling = state.innings[1].bowling;
+  // Keep match status LIVE during innings break/start
+  state.status = docData.status || state.status || "LIVE";
+
+  await _f.updateDoc(mRef, {
+    status: "LIVE",
+    state,
+    summary: state.summary,
+    updatedAt: _f.serverTimestamp()
+  });
+}
+
+
 export async function addBall(FB, matchId, ball){
   const { _f } = FB;
   const mRef = matchRef(FB, matchId);

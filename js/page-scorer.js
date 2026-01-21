@@ -1,6 +1,6 @@
 import { initScorerWizard } from "./scorer-wizard.js";
 import { setActiveNav, qs, loadTournament } from "./util.js";
-import { getFB, watchMatch, addBall, undoBall, setMatchStatus, resetMatch, watchAuth, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards } from "./store-fb.js";
+import { getFB, watchMatch, addBall, undoBall, setMatchStatus, resetMatch, watchAuth, setToss, setPlayingXI, setOpeningSetup, finalizeMatchAndComputeAwards , startSecondInnings } from "./store-fb.js";
 import { renderScoreLine, renderCommentary } from "./renderers.js";
 
 setActiveNav("scorer");
@@ -80,7 +80,7 @@ function _innings2Started(doc){
 function maybeShowInningsBreak(doc){
   try{
     const st = doc?.state || {};
-    if(Number(st.inningsIndex||0) !== 1) return;
+    if(Number(st.inningsIndex||0) !== 0) return;
     if(_innings2Started(doc)) return;
 
     const i0 = st?.innings?.[0];
@@ -97,8 +97,8 @@ function maybeShowInningsBreak(doc){
     if(document.getElementById("inningsBreakOverlay")) return;
 
     const target = Number(i0.runs||0) + 1;
-    const bat2 = i1.batting || st.summary?.batting || doc?.b;
-    const bowl2 = i1.bowling || st.summary?.bowling || doc?.a;
+    const bat2 = i0.bowling || doc?.bowlingFirst || doc?.b;
+    const bowl2 = i0.batting || doc?.battingFirst || doc?.a;
     const batXI = st.playingXI?.[bat2] || [];
     const bowlXI = st.playingXI?.[bowl2] || [];
 
@@ -173,6 +173,7 @@ function maybeShowInningsBreak(doc){
         return;
       }
       try{
+        await startSecondInnings(FB, matchId);
         await setOpeningSetup(FB, matchId, s, ns, bo);
         overlay.remove();
         showState("2nd innings started. Scoring shuru karo.", true);
@@ -295,6 +296,24 @@ function ensureDropdowns(doc){
   fillSelect($("batter"), batList, `Select striker (${batting})...`);
   fillSelect($("nonStriker"), batList, `Select non-striker (${batting})...`);
   fillSelect($("bowler"), bowlList, `Select bowler (${bowling})...`);
+
+  // ✅ Auto-apply saved onField (wizard/opening setup) so scoring can start immediately
+  const inn = currentInnings(doc);
+  const of = inn?.onField || {};
+  const bSel = $("batter");
+  const nSel = $("nonStriker");
+  const boSel = $("bowler");
+
+  if(bSel && of.striker) bSel.value = of.striker;
+  if(nSel && of.nonStriker) nSel.value = of.nonStriker;
+  if(boSel && of.bowler) boSel.value = of.bowler;
+
+  // Fallback: if still blank, pick first sensible defaults
+  if(bSel && !bSel.value && Array.isArray(batList) && batList.length) bSel.value = batList[0];
+  if(nSel && (!nSel.value || nSel.value===bSel?.value) && Array.isArray(batList) && batList.length>1){
+    nSel.value = batList.find(x=>x!==bSel.value) || batList[1];
+  }
+  if(boSel && !boSel.value && Array.isArray(bowlList) && bowlList.length) boSel.value = bowlList[0];
 }
 
 function fmtOversFromBalls(balls){
