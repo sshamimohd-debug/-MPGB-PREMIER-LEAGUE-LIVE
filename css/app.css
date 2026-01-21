@@ -313,7 +313,6 @@ body.modalOpen{ overflow:hidden; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
 }
 
-<<<<<<< HEAD
 
 
 /* Toss pane (app-like) */
@@ -331,7 +330,6 @@ body.modalOpen{ overflow:hidden; }
 .tossNote{ margin-top:14px; color: rgba(0,0,0,.55); font-size:12px; }
 /* make toss pane visually light even inside dark wizard */
 .wizCard .tossWrap{ background:#ffffff; border-radius:18px; padding:12px; }
-=======
 /* =========================
    Home: Matches tabs (CREX/Cricbuzz style)
    ========================= */
@@ -430,5 +428,3 @@ body.modalOpen{ overflow:hidden; }
   .mActions{ gap:6px; }
   .mBtn{ height:34px; }
 }
-
->>>>>>> 572fc886489550220fcbeb79eb46f419aa1fda15
