@@ -34,7 +34,6 @@ function isTossReady(doc){
 }
 function isOpeningReady(doc){
   const st = doc?.state || {};
-<<<<<<< HEAD
   // Some builds persist opening selection under `state.opening`, while others
   // persist it inside current innings (`state.innings[inningsIndex].onField`)
   // with an `openingDone` flag. Accept both (UI-only readiness check).
@@ -47,10 +46,6 @@ function isOpeningReady(doc){
 
   const of = inn.onField || {};
   return !!of.striker && !!of.nonStriker && !!of.bowler;
-=======
-  const o = st.opening || {};
-  return !!o.striker && !!o.nonStriker && !!o.bowler;
->>>>>>> 2ce2994d32bb7bd7643fc7b7e3551a8c3463c504
 }
 
 export function initScorerWizard(opts){
