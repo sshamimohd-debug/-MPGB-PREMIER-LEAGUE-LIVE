@@ -74,8 +74,15 @@ function _oversTextFromBalls(balls){
 function _innings2Started(doc){
   const st = doc?.state || {};
   const i1 = st?.innings?.[1];
-  return !!(i1 && (Number(i1.balls||0)>0 || (Array.isArray(i1.ballByBall) && i1.ballByBall.length>0)));
+  if(!i1) return false;
+
+  // Consider 2nd innings "started" as soon as opening is set,
+  // so the Innings Break modal doesn't keep re-opening before the first ball.
+  const hasOpening = !!(i1.openingDone || (i1.onField && i1.onField.striker && i1.onField.nonStriker && i1.onField.bowler));
+
+  return !!(hasOpening || Number(i1.balls||0)>0 || (Array.isArray(i1.ballByBall) && i1.ballByBall.length>0));
 }
+
 
 function maybeShowInningsBreak(doc){
   try{
