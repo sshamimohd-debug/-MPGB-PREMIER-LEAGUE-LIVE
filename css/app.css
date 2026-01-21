@@ -313,92 +313,147 @@ body.modalOpen{ overflow:hidden; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
 }
 
- 572fc886489550220fcbeb79eb46f419aa1fda15
+<<<<<<< HEAD
 
 
+/* Toss pane (app-like) */
+.wizPane[data-pane="toss"]{ padding:0; }
+.tossBar{ height:52px; display:grid; grid-template-columns:44px 1fr 44px; align-items:center; background:#e53935; color:#fff; border-radius:18px 18px 12px 12px; padding:0 8px; margin-bottom:12px; }
+.tossBarLeft,.tossBarRight{ display:grid; place-items:center; font-size:18px; opacity:.95; }
+.tossBarTitle{ font-weight:900; letter-spacing:.3px; text-align:center; }
+.tossQ{ color:#0b1220; font-weight:900; margin:10px 0 10px; }
+.tossGrid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.tossCard{ background:#fff; color:#0b1220; border-radius:14px; border:1px solid rgba(0,0,0,.10); padding:14px; min-height:110px; display:grid; place-items:center; gap:10px; }
+.tossTeamBubble{ width:70px; height:70px; border-radius:999px; display:grid; place-items:center; font-weight:900; font-size:24px; color:#fff; }
+.tossTeamName{ font-weight:800; }
+.tossPick{ width:70px; height:70px; border-radius:999px; display:grid; place-items:center; background:#e53935; color:#fff; font-size:28px; }
+.tossCard.sel{ outline:3px solid rgba(229,57,53,.35); }
+.tossNote{ margin-top:14px; color: rgba(0,0,0,.55); font-size:12px; }
+/* make toss pane visually light even inside dark wizard */
+.wizCard .tossWrap{ background:#ffffff; border-radius:18px; padding:12px; }
+=======
 /* =========================
-   Setup Wizard (Single-Screen)
+   Home: Matches tabs (Colorful pills)
    ========================= */
-.wizHost{ padding:14px; }
-.wizScreen{ display:block; }
-.wizMsg{
-  margin: 0 0 10px 0;
-  padding:10px 12px;
-  border-radius:12px;
-  background: rgba(229,57,53,.10);
-  border:1px solid rgba(229,57,53,.25);
-  font-size: 13px;
-}
-.wizTabs{
+
+.matchesCard{ overflow:hidden; }
+
+.segTabs{
   display:flex;
-  gap:10px;
-  margin: 4px 0 12px 0;
+  gap:8px;
+  padding:10px;
+  margin-top:10px;
+  border-radius:999px;
+  border:1px solid rgba(11,18,32,.06);
+  background: rgba(255,255,255,.78);
+  box-shadow: var(--shadow2);
 }
-.wizTab{
+
+.segBtn{
   flex:1;
-  border:1px solid rgba(0,0,0,.10);
-  border-radius: 14px;
-  padding: 10px 12px;
-  background:#fff;
-  font-weight:700;
-}
-.wizTab.on{
-  border-color: rgba(21,101,192,.35);
-  box-shadow: 0 6px 18px rgba(21,101,192,.12);
-}
-.wizCounters{
-  margin: 0 0 12px 0;
-  font-size: 12px;
-  opacity:.75;
-}
-.wizList{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  margin-top: 10px;
-}
-.wizPill{
-  width:100%;
-  text-align:left;
-  padding: 12px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,.10);
-  background:#fff;
-  font-weight:600;
-}
-.wizPill.on{
-  border-color: rgba(0,150,136,.35);
-  background: rgba(0,150,136,.08);
-}
-.wizPill.dis{ opacity:.55; pointer-events:none; }
-
-.tossHead{ font-size:18px; font-weight:800; margin: 4px 0 6px 0; }
-.tossSub{ font-size:13px; opacity:.75; margin-bottom:12px; }
-.tossSep{ margin: 14px 0 10px 0; font-size:12px; opacity:.7; text-transform:uppercase; letter-spacing:.06em; }
-.tossGrid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.tossCard{
-  border:1px solid rgba(0,0,0,.10);
-  border-radius: 16px;
-  padding: 14px 12px;
-  background:#fff;
-  font-weight:800;
-}
-.tossCard.on{
-  border-color: rgba(229,57,53,.45);
-  box-shadow: 0 10px 24px rgba(229,57,53,.16);
+  height:38px;
+  border-radius:999px;
+  border:1px solid rgba(11,18,32,.10);
+  background: rgba(255,255,255,.92);
+  font-weight:900;
+  font-size:13px;
+  cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
 }
 
-.wizRow{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; }
-.wizRow + .wizRow{ grid-template-columns: 1fr; }
-.wizSelect{
-  width:100%;
-  padding: 12px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,.10);
-  background:#fff;
-  font-weight:600;
+.segBtn:active{ transform: scale(.98); }
+
+.segBtn.active{
+  color:#0b1220;
+  border-color: rgba(11,18,32,.10);
+  box-shadow: 0 10px 22px rgba(0,0,0,.10);
 }
+
+/* Active pill colors per tab */
+.segBtn.active[data-tab="live"]{
+  color:#fff;
+  background: linear-gradient(135deg, #00b7ff, #1d4ed8);
+  border-color: rgba(29,78,216,.25);
+}
+
+.segBtn.active[data-tab="upcoming"]{
+  color:#062014;
+  background: linear-gradient(135deg, #34d399, #a7f3d0);
+  border-color: rgba(16,185,129,.25);
+}
+
+.segBtn.active[data-tab="completed"]{
+  color:#fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  border-color: rgba(239,68,68,.25);
+}
+
+@media (max-width: 420px){
+  .segTabs{ padding:8px; gap:6px; }
+  .segBtn{ height:36px; font-size:12px; }
+}
+
+.mRow{
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+  border-radius:18px;
+  border:1px solid rgba(11,18,32,.06);
+  background: rgba(255,255,255,.92);
+  box-shadow: var(--shadow2);
+}
+
+.mL{ flex:1; min-width:0; }
+
+.mTop{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+
+.mDot{ width:8px; height:8px; border-radius:999px; display:inline-block; }
+.mDot.live{ background: var(--live); box-shadow: 0 0 0 3px rgba(225,29,72,.14); }
+.mDot.up{ background: var(--warn); box-shadow: 0 0 0 3px rgba(245,158,11,.16); }
+.mDot.done{ background: var(--ok); box-shadow: 0 0 0 3px rgba(22,163,74,.14); }
+
+.mSt{ font-size:12px; font-weight:950; letter-spacing:.2px; }
+.mSt.live{ color: var(--live); }
+.mSt.up{ color: var(--warn); }
+.mSt.done{ color: var(--ok); }
+
+.mMeta{ font-size:12px; color:var(--muted); }
+
+.mTeams{ font-size:14px; font-weight:900; line-height:1.15; }
+.mTeams .vs{ font-weight:800; opacity:.7; margin:0 6px; }
+
+.mSub{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.35; }
+.mSub.done{ color: rgba(22,163,74,.95); font-weight:800; }
+
+.mActions{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; justify-content:center; }
+.mBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:36px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid rgba(11,18,32,.10);
+  background: rgba(255,255,255,.90);
+  font-weight:900;
+}
+.mBtn.ghost{ background: rgba(241,245,255,.95); border-color: rgba(31,107,255,.18); }
+
+@media (max-width: 420px){
+  .segTabs{ padding:8px; }
+  .segBtn{ height:36px; font-size:12px; }
+  .mRow{ padding:10px; }
+  .mActions{ gap:6px; }
+  .mBtn{ height:34px; }
+}
+
+>>>>>>> 572fc886489550220fcbeb79eb46f419aa1fda15
