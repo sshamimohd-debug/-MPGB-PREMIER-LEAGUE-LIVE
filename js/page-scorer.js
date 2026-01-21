@@ -36,7 +36,15 @@ function ensureWizard(){
     matchId,
     getDoc: ()=>CURRENT_DOC,
     getTournament: ()=>TOURNAMENT,
-    getSquads: ()=>SQUADS,
+    getSquads: ()=>{
+      if(SQUADS && Object.keys(SQUADS).length) return SQUADS;
+      // fallback until tournament loads
+      const d = CURRENT_DOC || {};
+      return {
+        A: squadOf(d.a),
+        B: squadOf(d.b)
+      };
+    },
     setToss,
     setPlayingXI,
     setOpeningSetup,
