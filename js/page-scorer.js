@@ -36,15 +36,7 @@ function ensureWizard(){
     matchId,
     getDoc: ()=>CURRENT_DOC,
     getTournament: ()=>TOURNAMENT,
-    getSquads: ()=>{
-      if(SQUADS && Object.keys(SQUADS).length) return SQUADS;
-      // fallback until tournament loads
-      const d = CURRENT_DOC || {};
-      return {
-        A: squadOf(d.a),
-        B: squadOf(d.b)
-      };
-    },
+    getSquads: ()=>SQUADS,
     setToss,
     setPlayingXI,
     setOpeningSetup,
@@ -694,7 +686,11 @@ function mountInningsBreakCard(){
   br.querySelector("#btnStart2nd")?.addEventListener("click", ()=>{
     // Open the short wizard (Break -> Opening -> Ready)
     if(!CURRENT_DOC) return;
-    ensureWizard();
+    // ⛔ Guard: squads ready hone se pehle wizard mat kholo
+  if (!SQUADS || !Object.keys(SQUADS).length) {
+    return;
+  }
+  ensureWizard();
     if(WIZARD) WIZARD.open(CURRENT_DOC);
   });
 }
