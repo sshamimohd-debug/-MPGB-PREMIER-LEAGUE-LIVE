@@ -252,6 +252,9 @@ function renderFromMatches(t, docs){
   wireInfoModal();
   wireMatchTabs();
   const t = await loadTournament();
+  if(FB){
+    try{ await ensureTournamentDocs(FB, t); }catch(e){ console.warn(e); }
+  }
   renderStatic(t);
 
   if(!FB){

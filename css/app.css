@@ -444,3 +444,24 @@ body.modalOpen{ overflow:hidden; }
 }
 
 >>>>>>> 572fc886489550220fcbeb79eb46f419aa1fda15
+
+
+
+/* ✅ Setup Wizard (new buttons) */
+.wizCardBtn{
+  width:100%;
+  background:#fff;
+  color:#111;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:14px;
+  padding:14px 12px;
+  text-align:center;
+  cursor:pointer;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+}
+.wizCardBtn.on{
+  border-color: rgba(58,160,255,.95);
+  box-shadow:0 14px 40px rgba(58,160,255,.25);
+  background: rgba(58,160,255,.16);
+}
+.wizCardBtn:active{ transform: translateY(1px); }
