@@ -242,86 +242,109 @@
   </script>
 
 <!-- ✅ Scorer Setup Wizard (mobile-first) -->
-<div id="setupWizard" class="wiz hidden">
+<!-- ✅ Scorer Setup Wizard (one-screen-at-a-time) -->
+<div id="setupWizard" class="wiz hidden" aria-hidden="true">
   <div class="wizCard">
     <div class="wizTop">
       <div class="wizTitle" id="wizTitle">Match Setup</div>
-      <div class="wizStep" id="wizStep">Step 1/6</div>
+      <div class="wizStep" id="wizStep">Step 1/3</div>
     </div>
 
+    <div id="wizMsg" class="wizMsg hidden"></div>
+
     <div class="wizBody">
-      <section class="wizPane" data-pane="toss">
-        <div class="tossBar">
-          <div class="tossBarLeft">←</div>
-          <div class="tossBarTitle">Toss</div>
-          <div class="tossBarRight">📷</div>
+      <!-- SCREEN 1: Playing XI -->
+      <section class="wizPane" data-pane="xi">
+        <div class="segTabs">
+          <button class="segTab on" id="xiTabA" type="button">Team A</button>
+          <button class="segTab" id="xiTabB" type="button">Team B</button>
         </div>
 
-        <div class="tossBody">
-          <div class="tossQ">Who won the toss?</div>
-          <div class="tossGrid2">
-            <button class="tossCard" data-pick="tossTeamA" id="btnTossA">
-              <div class="tossLogo">A</div>
-              <div class="tossName">Team A</div>
-            </button>
-            <button class="tossCard" data-pick="tossTeamB" id="btnTossB">
-              <div class="tossLogo">B</div>
-              <div class="tossName">Team B</div>
-            </button>
+        <div class="row" style="margin-top:12px">
+          <div>
+            <div class="h2" id="xiTeamName">Team A</div>
+            <div class="muted small">Select <b>exact 11</b> from squad (15)</div>
           </div>
+          <div class="pillCount" id="xiCount">0/11</div>
+        </div>
 
-          <div class="tossQ" style="margin-top:14px">Winner of the toss elected to?</div>
-          <div class="tossGrid2">
-            <button class="tossCard" data-pick="bat">
-              <div class="tossIcon">🏏</div>
-              <div class="tossName">Bat</div>
-            </button>
-            <button class="tossCard" data-pick="bowl">
-              <div class="tossIcon">🎯</div>
-              <div class="tossName">Bowl</div>
-            </button>
-          </div>
+        <div class="xiLists">
+          <div id="xiListA" class="xiList"></div>
+          <div id="xiListB" class="xiList hidden"></div>
+        </div>
 
-          <div class="tossHint">Tap the coin to flip</div>
-          <div class="tossCoin" aria-hidden="true">🪙</div>
-
-          <div class="tossBottom">
-            <div class="tossHelp">Need help?</div>
-            <div class="tossLets">Let's play</div>
-          </div>
+        <div class="muted small" style="margin-top:10px">
+          Tip: 11 select hone ke baad hi Next enable hoga.
         </div>
       </section>
 
-      <section class="wizPane hidden" data-pane="xiA">
-        <div class="wizH" id="xiATitle">Playing XI (Team A)</div>
-        <div class="wizP">Team A ke 11 players select karo.</div>
-        <div class="muted small wizCount" id="xiACount">0/11 selected</div>
-        <div id="xiAList" class="wizList" style="margin-top:10px"></div>
+      <!-- SCREEN 2: Toss -->
+      <section class="wizPane hidden" data-pane="toss">
+        <div class="h2">Toss</div>
+        <div class="muted small">Select toss winner and decision</div>
+
+        <div class="tossQ" style="margin-top:14px">Who won the toss?</div>
+        <div class="tossGrid2">
+          <button class="tossCard" type="button" data-toss-winner="A">
+            <div class="tossIcon">🪙</div>
+            <div class="tossName" id="tossTeamA">Team A</div>
+          </button>
+          <button class="tossCard" type="button" data-toss-winner="B">
+            <div class="tossIcon">🪙</div>
+            <div class="tossName" id="tossTeamB">Team B</div>
+          </button>
+        </div>
+
+        <div class="tossQ" style="margin-top:14px">Winner elected to?</div>
+        <div class="tossGrid2">
+          <button class="tossCard" type="button" data-toss-decision="BAT">
+            <div class="tossIcon">🏏</div>
+            <div class="tossName">Bat</div>
+          </button>
+          <button class="tossCard" type="button" data-toss-decision="BOWL">
+            <div class="tossIcon">🎯</div>
+            <div class="tossName">Bowl</div>
+          </button>
+        </div>
+
+        <div class="muted small" style="margin-top:10px" id="tossSummary">—</div>
       </section>
 
-      <section class="wizPane hidden" data-pane="xiB">
-        <div class="wizH" id="xiBTitle">Playing XI (Team B)</div>
-        <div class="wizP">Team B ke 11 players select karo.</div>
-        <div class="muted small wizCount" id="xiBCount">0/11 selected</div>
-        <div id="xiBList" class="wizList" style="margin-top:10px"></div>
+      <!-- SCREEN 3: Opening (innings start only) -->
+      <section class="wizPane hidden" data-pane="opening">
+        <div class="h2">Opening Setup</div>
+        <div class="muted small">Only once per innings</div>
+
+        <div class="formGrid" style="margin-top:12px">
+          <div>
+            <div class="label">Striker</div>
+            <select id="opStriker" class="input"></select>
+          </div>
+          <div>
+            <div class="label">Non-striker</div>
+            <select id="opNonStriker" class="input"></select>
+          </div>
+          <div>
+            <div class="label">Opening bowler</div>
+            <select id="opBowler" class="input"></select>
+          </div>
+        </div>
+
+        <div class="muted small" style="margin-top:10px">
+          Save ke baad ye screen hata di jayegi aur scoring start ho jayegi.
+        </div>
       </section>
+    </div>
 
-      <section class="wizPane hidden" data-pane="leaders">
-        <div class="wizH">Captain / Vice Captain / Wicket-Keeper</div>
-        <div class="wizP">Dono teams ke leaders choose karo.</div>
+    <div class="wizBottom">
+      <button class="btn ghost" id="wizBack" type="button">Back</button>
+      <div class="wizDots" id="wizDots"></div>
+      <button class="btn primary" id="wizNext" type="button">Next</button>
+    </div>
+  </div>
+</div>
 
-        <div class="wizSubH">Team A</div>
-        <div class="wizRow"><label>Captain</label><select id="capA"></select></div>
-        <div class="wizRow"><label>Vice Captain</label><select id="vcA"></select></div>
-        <div class="wizRow"><label>Wicket Keeper</label><select id="wkA"></select></div>
-
-        <div class="wizSubH" style="margin-top:12px">Team B</div>
-        <div class="wizRow"><label>Captain</label><select id="capB"></select></div>
-        <div class="wizRow"><label>Vice Captain</label><select id="vcB"></select></div>
-        <div class="wizRow"><label>Wicket Keeper</label><select id="wkB"></select></div>
-      </section>
-
-      <!-- 2nd innings UX: show an Innings Break screen before asking only opener + bowler -->
+<!-- 2nd innings UX: show an Innings Break screen before asking only opener + bowler -->
       <section class="wizPane hidden" data-pane="break">
         <div class="wizH">Innings Break</div>
         <div class="wizP">1st innings complete. Ab 2nd innings (chase) start karte hain.</div>
