@@ -66,6 +66,18 @@
 .wizPill{ height:42px; border-radius:999px; border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; padding:0 10px; font-size:13px; cursor:pointer; user-select:none; }
 .wizPill.on{ background: rgba(30,144,255,.18); border-color: rgba(30,144,255,.45); }
 
+/* Playing XI tabs (wizard) */
+.xiTabs{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+.xiTab{ flex:1; height:40px; border-radius:999px; border:1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06); color:#e9f1ff; font-weight:800; cursor:pointer;
+}
+.xiTab.on{ background: rgba(30,144,255,.22); border-color: rgba(30,144,255,.55); }
+.xiHint{ flex:2; text-align:right; font-size:12px; color: rgba(233,241,255,.75); }
+@media (max-width:420px){ .xiHint{ display:none; } }
+
+/* XI pill selected */
+.wizPill.sel{ background: rgba(30,144,255,.18); border-color: rgba(30,144,255,.45); }
+
 .wizBigOk{ margin-top:10px; padding:14px; border-radius:16px; background: rgba(0,255,160,.10);
   border:1px solid rgba(0,255,160,.22); font-weight:800; text-align:center;
 }
@@ -333,7 +345,7 @@ body.modalOpen{ overflow:hidden; }
 .wizCard .tossWrap{ background:#ffffff; border-radius:18px; padding:12px; }
 =======
 /* =========================
-   Home: Matches tabs (Colorful pills)
+   Home: Matches tabs (CREX/Cricbuzz style)
    ========================= */
 
 .matchesCard{ overflow:hidden; }
@@ -345,7 +357,7 @@ body.modalOpen{ overflow:hidden; }
   margin-top:10px;
   border-radius:999px;
   border:1px solid rgba(11,18,32,.06);
-  background: rgba(255,255,255,.78);
+  background: rgba(255,255,255,.70);
   box-shadow: var(--shadow2);
 }
 
@@ -353,45 +365,20 @@ body.modalOpen{ overflow:hidden; }
   flex:1;
   height:38px;
   border-radius:999px;
-  border:1px solid rgba(11,18,32,.10);
-  background: rgba(255,255,255,.92);
+  border:1px solid rgba(11,18,32,.08);
+  background: rgba(255,255,255,.85);
   font-weight:900;
   font-size:13px;
   cursor:pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-
 .segBtn:active{ transform: scale(.98); }
-
 .segBtn.active{
-  color:#0b1220;
-  border-color: rgba(11,18,32,.10);
-  box-shadow: 0 10px 22px rgba(0,0,0,.10);
-}
-
-/* Active pill colors per tab */
-.segBtn.active[data-tab="live"]{
+  border-color: rgba(31,107,255,.55);
+  background: linear-gradient(135deg, rgba(31,107,255,.95), rgba(14,165,233,.88));
   color:#fff;
-  background: linear-gradient(135deg, #00b7ff, #1d4ed8);
-  border-color: rgba(29,78,216,.25);
-}
-
-.segBtn.active[data-tab="upcoming"]{
-  color:#062014;
-  background: linear-gradient(135deg, #34d399, #a7f3d0);
-  border-color: rgba(16,185,129,.25);
-}
-
-.segBtn.active[data-tab="completed"]{
-  color:#fff;
-  background: linear-gradient(135deg, #f97316, #ef4444);
-  border-color: rgba(239,68,68,.25);
-}
-
-@media (max-width: 420px){
-  .segTabs{ padding:8px; gap:6px; }
-  .segBtn{ height:36px; font-size:12px; }
+  box-shadow: 0 12px 24px rgba(31,107,255,.18);
 }
 
 .mRow{
