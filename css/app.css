@@ -30,6 +30,25 @@
 .wizP{ font-size:13px; opacity:.85; margin:0 0 12px;}
 
 .wizGrid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+
+/* Buttons used inside setup wizard panes */
+.wizCardBtn{
+  height:46px; width:100%;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  color:#eaf2ff;
+  font-weight:800;
+  cursor:pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.wizCardBtn:active{ transform: scale(.985); }
+.wizCardBtn.on{
+  background: rgba(43,108,255,.32);
+  border-color: rgba(120,170,255,.55);
+  box-shadow: 0 10px 22px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
 .wizBtn{ height:46px; border-radius:14px; border:1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.06); color:#eaf2ff; font-weight:700; cursor:pointer;
   transition: transform .08s ease, background .15s ease, border-color .15s ease;
@@ -65,6 +84,18 @@
 /* legacy pills (kept for backward compatibility) */
 .wizPill{ height:42px; border-radius:999px; border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; padding:0 10px; font-size:13px; cursor:pointer; user-select:none; }
 .wizPill.on{ background: rgba(30,144,255,.18); border-color: rgba(30,144,255,.45); }
+
+/* Playing XI tabs (wizard) */
+.xiTabs{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+.xiTab{ flex:1; height:40px; border-radius:999px; border:1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06); color:#e9f1ff; font-weight:800; cursor:pointer;
+}
+.xiTab.on{ background: rgba(30,144,255,.22); border-color: rgba(30,144,255,.55); }
+.xiHint{ flex:2; text-align:right; font-size:12px; color: rgba(233,241,255,.75); }
+@media (max-width:420px){ .xiHint{ display:none; } }
+
+/* XI pill selected */
+.wizPill.sel{ background: rgba(30,144,255,.18); border-color: rgba(30,144,255,.45); }
 
 .wizBigOk{ margin-top:10px; padding:14px; border-radius:16px; background: rgba(0,255,160,.10);
   border:1px solid rgba(0,255,160,.22); font-weight:800; text-align:center;

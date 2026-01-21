@@ -5,6 +5,7 @@ import { renderScoreLine, renderCommentary } from "./renderers.js";
 
 setActiveNav("scorer");
 const FB = getFB();
+const USE_SETUP_WIZARD = true; // Use full-screen setup wizard; hide legacy setup cards
 let WIZARD = null;
 
 const $ = (id)=>document.getElementById(id);
@@ -39,6 +40,7 @@ function ensureWizard(){
     setToss,
     setPlayingXI,
     setOpeningSetup,
+    setMatchStatus,
     onDone: ()=>{
       // after wizard done, we keep normal scorer UI as-is
       showState("Setup complete. Ab scoring start kar sakte ho.", true);
@@ -360,6 +362,8 @@ async function safeAddBall(ball){
 // Toss Card (inject)
 // -----------------------------
 function mountTossCard(){
+  if(USE_SETUP_WIZARD) return;
+
   if(_tossMounted) return;
   const batterSel = $("batter");
   if(!batterSel) return;
@@ -415,6 +419,8 @@ function mountTossCard(){
 }
 
 function updateTossUI(doc){
+  if(USE_SETUP_WIZARD) return;
+
   if(!_tossMounted) mountTossCard();
   const winnerSel = $("tossWinner");
   if(!winnerSel) return;
@@ -453,6 +459,8 @@ function updateTossUI(doc){
 // Playing XI Card (inject)
 // -----------------------------
 function mountPlayingXICard(){
+  if(USE_SETUP_WIZARD) return;
+
   if(_xiMounted) return;
 
   const batterSel = $("batter");
@@ -600,6 +608,8 @@ function renderXIList(containerId, players, selectedSet, countId){
 }
 
 function updateXIUI(doc){
+  if(USE_SETUP_WIZARD) return;
+
   if(!_xiMounted) mountPlayingXICard();
   const card = $("xiCard");
   if(!card) return;
@@ -645,6 +655,8 @@ function updateXIUI(doc){
 // Innings Break Card (UI only)
 // -----------------------------
 function mountInningsBreakCard(){
+  if(USE_SETUP_WIZARD) return;
+
   if(_breakMounted) return;
   const batterSel = $("batter");
   const ballCard = batterSel ? batterSel.closest(".card") : null;
@@ -672,13 +684,20 @@ function mountInningsBreakCard(){
   _breakMounted = true;
 
   br.querySelector("#btnStart2nd")?.addEventListener("click", ()=>{
-    // UX: 2nd innings start par opening selection scorer page par hi hoga (no wizard)
-    const oc = document.getElementById("openingCard");
-    if(oc){ oc.scrollIntoView({behavior:'smooth', block:'start'}); }
+    // Open the short wizard (Break -> Opening -> Ready)
+    if(!CURRENT_DOC) return;
+    // ⛔ Guard: squads ready hone se pehle wizard mat kholo
+  if (!SQUADS || !Object.keys(SQUADS).length) {
+    return;
+  }
+  ensureWizard();
+    if(WIZARD) WIZARD.open(CURRENT_DOC);
   });
 }
 
 function updateInningsBreakUI(doc){
+  if(USE_SETUP_WIZARD) return;
+
   if(!_breakMounted) mountInningsBreakCard();
   const card = document.getElementById("inningsBreakCard");
   if(!card) return;
@@ -723,6 +742,8 @@ function updateInningsBreakUI(doc){
 // Opening Setup Card (2 openers + opening bowler)
 // -----------------------------
 function mountOpeningCard(){
+  if(USE_SETUP_WIZARD) return;
+
   if(_openingMounted) return;
   const batterSel = $("batter");
   const ballCard = batterSel ? batterSel.closest(".card") : null;
@@ -778,6 +799,8 @@ function mountOpeningCard(){
 }
 
 function updateOpeningUI(doc){
+  if(USE_SETUP_WIZARD) return;
+
   if(!_openingMounted) mountOpeningCard();
   const card = $("openingCard");
   if(!card) return;
@@ -785,6 +808,12 @@ function updateOpeningUI(doc){
   const idx = Number(st?.inningsIndex||0);
   const hasToss = !!(st.toss || doc?.tossWinner);
   const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
+
+  // ✅ UX: 2nd innings me opening selection wizard se hoga (Break -> Opening). Is page par opening card hide.
+  if(idx>=1 && hasToss && hasXI){
+    card.style.display = "none";
+    return;
+  }
 
   const inn = currentInnings(doc);
   const of = inn?.onField || {};
