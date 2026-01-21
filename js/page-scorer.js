@@ -1015,90 +1015,263 @@ function updateXIUI(doc){
 }
 
 // -----------------------------
-// Innings Break Card (UI only)
+// Innings Break Overlay (UI only)
 // -----------------------------
+let _ibMounted = false;
+let _ibVisible = false;
+let _ibPoppedKey = ""; // per match once
+
 function mountInningsBreakCard(){
+  // legacy name kept (called from render loop)
   if(USE_SETUP_WIZARD) return;
+  if(_ibMounted) return;
 
-  if(_breakMounted) return;
-  const batterSel = $("batter");
-  const ballCard = batterSel ? batterSel.closest(".card") : null;
-  const parent = ballCard ? ballCard.parentElement : null;
-  if(!parent || !ballCard) return;
-
-  const br = document.createElement("div");
-  br.className = "card";
-  br.id = "inningsBreakCard";
-  br.innerHTML = `
-    <div class="h1" style="font-size:16px">Innings Break</div>
-    <div class="muted small" style="margin-top:4px" id="ibNote">1st innings complete. Ab 2nd innings (chase) start karte hain.</div>
-    <hr class="sep"/>
-    <div class="row" style="justify-content:space-between; gap:12px; align-items:flex-start">
-      <div>
-        <div class="muted small" id="ibSummary">-</div>
-        <div class="h1" style="margin-top:6px; font-size:18px" id="ibTarget">-</div>
+  const overlay = document.createElement("div");
+  overlay.id = "inningsBreakOverlay";
+  overlay.className = "ibOverlay";
+  overlay.style.display = "none";
+  overlay.innerHTML = `
+    <div class="ibSheet">
+      <div class="ibHeader">
+        <div>
+          <div class="ibTitle">1st Innings Complete</div>
+          <div class="ibSub muted small" id="ibHdrLine">-</div>
+        </div>
+        <button class="btn ghost" type="button" id="ibClose">✕</button>
       </div>
-      <button class="btn ok" id="btnStart2nd" type="button">Start 2nd Innings</button>
+
+      <div class="ibBody" id="ibBody">
+        <div class="card ibCard">
+          <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px">
+            <div>
+              <div class="muted small">1st Innings</div>
+              <div class="h1" style="font-size:22px; margin-top:2px" id="ibScore">-</div>
+              <div class="muted small" style="margin-top:4px" id="ibRR">-</div>
+            </div>
+            <div class="ibBadges">
+              <span class="chip on" id="ibTargetChip">Target: -</span>
+              <span class="chip" id="ibExtrasChip">Extras: -</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card ibCard">
+          <div class="h1" style="font-size:16px">Batting</div>
+          <div class="tableWrap" style="margin-top:8px">
+            <table class="tbl">
+              <thead>
+                <tr><th>Batsman</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
+              </thead>
+              <tbody id="ibBatRows"><tr><td colspan="6" class="muted small">No data.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card ibCard">
+          <div class="h1" style="font-size:16px">Bowling</div>
+          <div class="tableWrap" style="margin-top:8px">
+            <table class="tbl">
+              <thead>
+                <tr><th>Bowler</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr>
+              </thead>
+              <tbody id="ibBowlRows"><tr><td colspan="5" class="muted small">No data.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card ibCard">
+          <div class="h1" style="font-size:16px">Fall of Wickets</div>
+          <div class="muted small" style="margin-top:8px" id="ibFow">-</div>
+        </div>
+      </div>
+
+      <div class="ibBottom">
+        <div class="ibBottomLeft">
+          <div class="muted small" id="ibChaseLine">Chase target will be shown here.</div>
+        </div>
+        <button class="btn ok" id="btnStart2nd" type="button">Start 2nd Innings</button>
+      </div>
     </div>
-    <div class="muted small" style="margin-top:10px">Next step: sirf <b>opener batsman</b> + <b>opening bowler</b> select hoga.</div>
   `;
+  document.body.appendChild(overlay);
 
-  parent.insertBefore(br, ballCard);
-  _breakMounted = true;
+  overlay.querySelector("#ibClose")?.addEventListener("click", ()=>{
+    hideInningsBreakOverlay();
+  });
 
-  br.querySelector("#btnStart2nd")?.addEventListener("click", ()=>{
+  overlay.querySelector("#btnStart2nd")?.addEventListener("click", ()=>{
     // Open the short wizard (Break -> Opening -> Ready)
     if(!CURRENT_DOC) return;
-    // ⛔ Guard: squads ready hone se pehle wizard mat kholo
-  if (!SQUADS || !Object.keys(SQUADS).length) {
-    return;
-  }
-  ensureWizard();
+    // Always close overlay before opening wizard
+    hideInningsBreakOverlay();
+    ensureWizard();
     if(WIZARD) WIZARD.open(CURRENT_DOC);
   });
+
+  // click outside sheet closes
+  overlay.addEventListener("click", (e)=>{
+    const sheet = overlay.querySelector(".ibSheet");
+    if(sheet && !sheet.contains(e.target)) hideInningsBreakOverlay();
+  });
+
+  _ibMounted = true;
+}
+
+function showInningsBreakOverlay(){
+  const el = document.getElementById("inningsBreakOverlay");
+  if(!el) return;
+  el.style.display = "flex";
+  _ibVisible = true;
+}
+function hideInningsBreakOverlay(){
+  const el = document.getElementById("inningsBreakOverlay");
+  if(!el) return;
+  el.style.display = "none";
+  _ibVisible = false;
+}
+
+function popInningsCompleteOnce(doc){
+  try{
+    const matchId = (doc?.id || doc?.matchId || doc?._id || "");
+    const key = `ibpop_${matchId || "match"}`;
+    if(_ibPoppedKey === key) return;
+    _ibPoppedKey = key;
+
+    const toast = document.createElement("div");
+    toast.className = "toast ibToast";
+    toast.innerHTML = `<b>1st Innings Complete</b><div class="muted small" style="margin-top:2px">Scorecard ready • Start 2nd innings</div>`;
+    document.body.appendChild(toast);
+    setTimeout(()=>toast.classList.add("show"), 20);
+    setTimeout(()=>{
+      toast.classList.remove("show");
+      setTimeout(()=>toast.remove(), 250);
+    }, 1400);
+  } catch(e){}
 }
 
 function updateInningsBreakUI(doc){
   if(USE_SETUP_WIZARD) return;
-
-  if(!_breakMounted) mountInningsBreakCard();
-  const card = document.getElementById("inningsBreakCard");
-  if(!card) return;
+  mountInningsBreakCard();
 
   const st = doc?.state || {};
+  const innArr = Array.isArray(st.innings) ? st.innings : [];
+  const i0 = normalizeInnings(innArr?.[0] || {});
+  const i1 = normalizeInnings(innArr?.[1] || {});
   const idx = Number(st?.inningsIndex||0);
-  const hasToss = !!(st.toss || doc?.tossWinner);
-  const hasXI = !!(st.playingXI && st.playingXI[doc.a]?.length===11 && st.playingXI[doc.b]?.length===11);
 
-  const inn = currentInnings(doc);
-  const of = inn?.onField || {};
-  const inningsStarted = !!(
-    inn && (
-      (Number(inn.ballsTotal||0) > 0) ||
-      (Number(inn.balls||0) > 0) ||
-      ((inn.ballByBall?.length||0) > 0) ||
-      (inn.openingDone === true)
-    )
+  const totalOvers = Number(st.oversPerInnings || doc?.oversPerInnings || 10);
+  const maxBalls = Math.max(0, totalOvers * 6);
+  const i0Done = (Number(i0.wkts||0) >= 10) || (Number(i0.balls||0) >= maxBalls);
+
+  // 2nd innings has started if any ball logged or opening marked
+  const i1Started = !!(
+    (Number(i1.ballsTotal||0) > 0) ||
+    (Number(i1.balls||0) > 0) ||
+    ((i1.ballByBall?.length||0) > 0) ||
+    (i1.openingDone === true) ||
+    (i1?.onField?.striker && i1?.onField?.nonStriker && i1?.onField?.bowler)
   );
-  const hasOpening = inningsStarted || !!(of.striker && of.nonStriker && of.bowler);
 
-  // Show only during 2nd innings BEFORE opening is selected
-  const show = (idx>=1 && hasToss && hasXI && !hasOpening);
-  card.style.display = show ? "block" : "none";
-  if(!show) return;
+  // Show overlay only when we are at innings 2 but NOT started yet
+  const shouldShow = (idx === 1) && i0Done && !i1Started;
 
-  const i1 = st?.innings?.[0] || {};
-  const runs = Number(i1.runs||0);
-  const wk = Number(i1.wickets||i1.wkts||0);
-  const lb = Number(i1.legalBalls||i1.ballsTotal||i1.balls||0);
+  if(shouldShow){
+    // toast once, then show overlay
+    popInningsCompleteOnce(doc);
+    showInningsBreakOverlay();
+  } else {
+    if(_ibVisible) hideInningsBreakOverlay();
+    return;
+  }
+
+  // --- Fill UI ---
+  const runs = Number(i0.runs||0);
+  const wk = Number(i0.wkts||0);
+  const lb = Number(i0.balls||0);
   const ov = fmtOversFromBalls(lb);
+  const rr = lb > 0 ? (runs * 6) / lb : 0;
   const target = runs + 1;
 
-  const { batting } = battingBowlingTeams(doc);
-  const summaryEl = document.getElementById("ibSummary");
-  const targetEl = document.getElementById("ibTarget");
-  if(summaryEl) summaryEl.textContent = `1st Innings: ${runs}/${wk} (${ov} ov)`;
-  if(targetEl) targetEl.textContent = `Target for ${batting}: ${target}`;
+  const hdr = document.getElementById("ibHdrLine");
+  if(hdr) hdr.textContent = `${i0.batting || "Team"} • ${runs}/${wk} (${ov} ov)`;
+
+  const scoreEl = document.getElementById("ibScore");
+  const rrEl = document.getElementById("ibRR");
+  if(scoreEl) scoreEl.textContent = `${runs}/${wk} (${ov} ov)`;
+  if(rrEl) rrEl.textContent = `Run Rate: ${Math.round(rr*100)/100}`;
+
+  const tChip = document.getElementById("ibTargetChip");
+  if(tChip) tChip.textContent = `Target: ${target}`;
+
+  const ex = i0.extras || {wd:0, nb:0, lb:0, b:0};
+  const exTotal = (Number(ex.wd||0)+Number(ex.nb||0)+Number(ex.lb||0)+Number(ex.b||0));
+  const exChip = document.getElementById("ibExtrasChip");
+  if(exChip) exChip.textContent = `Extras: ${exTotal} (wd ${ex.wd||0}, nb ${ex.nb||0}, lb ${ex.lb||0}, b ${ex.b||0})`;
+
+  const chaseLine = document.getElementById("ibChaseLine");
+  if(chaseLine) chaseLine.textContent = `Target: ${target} in ${totalOvers} overs`;
+
+  // Batting rows
+  const batBody = document.getElementById("ibBatRows");
+  if(batBody){
+    const bats = Object.entries(i0.batters||{}).map(([name, b])=>[name, b||{}]);
+    bats.sort((a,b)=> (Number(b[1].r||0) - Number(a[1].r||0)) || (Number(a[1].at||0)-Number(b[1].at||0)));
+    if(!bats.length){
+      batBody.innerHTML = `<tr><td colspan="6" class="muted small">No batting entries yet.</td></tr>`;
+    } else {
+      batBody.innerHTML = bats.map(([name, b])=>{
+        const r = Number(b.r||0), bl = Number(b.b||0), f4 = Number(b.f4||0), f6 = Number(b.f6||0);
+        const sr = bl>0 ? Math.round((r*10000)/bl)/100 : 0;
+        const how = (b.out && b.how) ? `<div class="muted small">${esc(b.how)}</div>` : ``;
+        return `<tr>
+          <td><b>${esc(name)}</b>${how}</td>
+          <td>${r}</td><td>${bl}</td><td>${f4}</td><td>${f6}</td><td>${sr}</td>
+        </tr>`;
+      }).join("");
+    }
+  }
+
+  // Bowling rows (opposition bowlers in innings 1)
+  const bowlBody = document.getElementById("ibBowlRows");
+  if(bowlBody){
+    const bowls = Object.entries(i0.bowlers||{}).map(([name, b])=>[name, b||{}]);
+    // Sort by wickets desc, then runs asc
+    bowls.sort((a,b)=> (Number(b[1].w||0) - Number(a[1].w||0)) || (Number(a[1].r||0)-Number(b[1].r||0)));
+    if(!bowls.length){
+      bowlBody.innerHTML = `<tr><td colspan="5" class="muted small">No bowling entries yet.</td></tr>`;
+    } else {
+      bowlBody.innerHTML = bowls.map(([name, b])=>{
+        const balls = Number(b.b||0);
+        const ov = fmtOversFromBalls(balls);
+        const r = Number(b.r||0);
+        const w = Number(b.w||0);
+        const econ = balls>0 ? Math.round((r*6*100)/balls)/100 : 0;
+        return `<tr>
+          <td><b>${esc(name)}</b></td>
+          <td>${ov}</td><td>${r}</td><td>${w}</td><td>${econ}</td>
+        </tr>`;
+      }).join("");
+    }
+  }
+
+  // FOW
+  const fowEl = document.getElementById("ibFow");
+  if(fowEl){
+    const fow = Array.isArray(i0.fow) ? i0.fow : [];
+    if(!fow.length){
+      fowEl.textContent = "—";
+    } else {
+      const parts = fow.map((x)=>{
+        if(typeof x === "string") return x;
+        const sc = x?.score ?? x?.at ?? "";
+        const w = x?.wkt ?? x?.w ?? "";
+        const o = x?.over ?? x?.ov ?? "";
+        const left = (sc!=="" && w!=="") ? `${sc}/${w}` : (sc||"");
+        return `${left}${o!==""?` (${o} ov)`:``}`;
+      }).filter(Boolean);
+      fowEl.textContent = parts.join(", ");
+    }
+  }
 }
 
 // -----------------------------

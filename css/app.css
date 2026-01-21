@@ -446,6 +446,7 @@ body.modalOpen{ overflow:hidden; }
 >>>>>>> 572fc886489550220fcbeb79eb46f419aa1fda15
 
 
+<<<<<<< HEAD
 
 /* =========================
    Innings Complete Fullscreen Overlay (Scorer)
@@ -485,3 +486,103 @@ body.modalOpen{ overflow:hidden; }
   background: transparent !important;
   border: 1px solid rgba(0,0,0,.12) !important;
 }
+=======
+/* ============================
+   Innings Break Fullscreen Overlay
+   (UI only - no scoring logic)
+   ============================ */
+.ibOverlay{
+  position:fixed;
+  inset:0;
+  z-index:9998;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  background: rgba(0,0,0,.45);
+  padding:12px;
+}
+
+.ibSheet{
+  width:100%;
+  max-width:720px;
+  max-height:92vh;
+  display:flex;
+  flex-direction:column;
+  background: var(--card, #fff);
+  border:1px solid var(--border, rgba(0,0,0,.12));
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow: 0 18px 60px rgba(0,0,0,.30);
+}
+
+.ibHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 14px 10px 14px;
+  border-bottom:1px solid var(--border, rgba(0,0,0,.10));
+  background: var(--card, #fff);
+  position:sticky;
+  top:0;
+  z-index:1;
+}
+
+.ibTitle{ font-weight:900; font-size:16px; }
+.ibSub{ margin-top:2px; }
+
+.ibBody{
+  padding:12px;
+  overflow:auto;
+}
+
+.ibCard{ margin-bottom:10px; }
+.ibBadges{ display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+
+.ibBottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+  border-top:1px solid var(--border, rgba(0,0,0,.10));
+  background: var(--card, #fff);
+  position:sticky;
+  bottom:0;
+}
+
+.ibBottom .btn{ height:46px; border-radius:16px; padding:0 16px; }
+
+/* Tables (scorecard look) */
+.tableWrap{ overflow:auto; border-radius:14px; border:1px solid var(--border, rgba(0,0,0,.10)); }
+.tbl{ width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th, .tbl td{ padding:10px 10px; text-align:left; vertical-align:top; border-bottom:1px solid var(--border, rgba(0,0,0,.08)); }
+.tbl thead th{ position:sticky; top:0; background: var(--card, #fff); z-index:1; font-size:12px; letter-spacing:.02em; text-transform:uppercase; opacity:.85; }
+.tbl td:nth-child(n+2), .tbl th:nth-child(n+2){ text-align:right; white-space:nowrap; }
+.tbl tr:last-child td{ border-bottom:none; }
+
+/* Toast */
+.toast{
+  position:fixed;
+  left:50%;
+  top:14px;
+  transform: translateX(-50%) translateY(-12px);
+  opacity:0;
+  pointer-events:none;
+  z-index:9999;
+  background: var(--card, #fff);
+  border:1px solid var(--border, rgba(0,0,0,.10));
+  border-radius:16px;
+  padding:10px 12px;
+  box-shadow: 0 16px 50px rgba(0,0,0,.25);
+  min-width: 220px;
+  max-width: min(520px, calc(100vw - 24px));
+}
+.toast.show{
+  opacity:1;
+  transform: translateX(-50%) translateY(0);
+  transition: all .18s ease;
+}
+.ibToast b{ font-size:14px; }
+
+>>>>>>> 23d50c3c83b8a123ab39266088fc1df54f0c3d37
