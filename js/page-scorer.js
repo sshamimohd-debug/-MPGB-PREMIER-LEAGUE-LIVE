@@ -9,22 +9,12 @@ const USE_SETUP_WIZARD = true; // Use full-screen setup wizard; hide legacy setu
 let WIZARD = null;
 
 const $ = (id)=>document.getElementById(id);
-const esc = (s)=> (s??"").toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
+const esc = (s)=> (s??"").toString().replace(/[&<>"\']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const params = qs();
 const matchId = params.get("matchId") || params.get("match") || "A1";
 
 let TOURNAMENT = null;
 let SQUADS = {}; // team -> [15]
-
-// Preload tournament data (needed for squads in setup wizard)
-try {
-  TOURNAMENT = await loadTournament();
-  SQUADS = TOURNAMENT?.squads || {};
-} catch (e) {
-  console.warn('Tournament preload failed (wizard may show empty squads until loaded).', e);
-}
-
 let CURRENT_DOC = null;
 let LAST_STATUS = null;
 let _tossMounted = false;
@@ -49,6 +39,7 @@ function ensureWizard(){
     setToss,
     setPlayingXI,
     setOpeningSetup,
+    setMatchStatus,
     onDone: ()=>{
       // after wizard done, we keep normal scorer UI as-is
       showState("Setup complete. Ab scoring start kar sakte ho.", true);
