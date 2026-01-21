@@ -1,5 +1,42 @@
 import { esc } from "./util.js";
 
+function _oversTextFromBalls(balls){
+  const o = Math.floor((Number(balls||0))/6);
+  const b = Math.floor((Number(balls||0))%6);
+  return `${o}.${b}`;
+}
+
+function _displaySummary(m){
+  const ds = _displaySummary(m);
+  const st = m.state || {};
+  const idx = Number(st.inningsIndex ?? sum.inningsIndex ?? 0);
+  const innings = Array.isArray(st.innings) ? st.innings : [];
+  const i0 = innings[0] || null;
+  const i1 = innings[1] || null;
+
+  // If innings 2 is selected but hasn't started yet, keep showing innings 1 final score.
+  const i1Started = !!(i1 && (Number(i1.balls||0)>0 || (Array.isArray(i1.ballByBall) && i1.ballByBall.length>0)));
+  if(idx===1 && !i1Started && i0){
+    const oversLimit = Number(st.oversPerInnings || 10);
+    const oversText = `${_oversTextFromBalls(i0.balls)}/${oversLimit}`;
+    const rr = (Number(i0.balls||0)>0) ? Math.round(((Number(i0.runs||0)*6)/Number(i0.balls||0))*100)/100 : 0;
+    return {
+      batting: i0.batting || sum.batting || m.a,
+      scoreText: `${Number(i0.runs||0)}/${Number(i0.wkts||0)}`,
+      oversText,
+      rr
+    };
+  }
+
+  return {
+    batting: sum.batting || m.a,
+    scoreText: sum.scoreText || "0/0",
+    oversText: sum.oversText || "0.0/10",
+    rr: (sum.rr!=null) ? sum.rr : 0
+  };
+}
+
+
 export function renderScoreLine(doc){
   const m = doc;
   const sum = m.summary || {};
@@ -10,8 +47,8 @@ export function renderScoreLine(doc){
         <div>
           <div><b>${esc(m.a)} vs ${esc(m.b)}</b> <span class="muted small">• Match ${esc(m.matchId)} • Group ${esc(m.group)} • ${esc(m.time)}</span></div>
           <div class="muted small">
-            <b>${esc(sum.batting||m.a)}</b> ${esc(sum.scoreText||"0/0")} <span class="muted">(${esc(sum.oversText||"0.0/10")})</span>
-            • RR ${esc(sum.rr||0)}
+            <b>${esc(ds.batting)}</b> ${esc(ds.scoreText)} <span class="muted">(${esc(ds.oversText)})</span>
+            • RR ${esc(ds.rr||0)}
           </div>
         </div>
       </div>

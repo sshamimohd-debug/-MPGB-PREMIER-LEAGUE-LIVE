@@ -30,25 +30,6 @@
 .wizP{ font-size:13px; opacity:.85; margin:0 0 12px;}
 
 .wizGrid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
-
-/* Buttons used inside setup wizard panes */
-.wizCardBtn{
-  height:46px; width:100%;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.07);
-  color:#eaf2ff;
-  font-weight:800;
-  cursor:pointer;
-  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
-}
-.wizCardBtn:active{ transform: scale(.985); }
-.wizCardBtn.on{
-  background: rgba(43,108,255,.32);
-  border-color: rgba(120,170,255,.55);
-  box-shadow: 0 10px 22px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
-}
-
 .wizBtn{ height:46px; border-radius:14px; border:1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.06); color:#eaf2ff; font-weight:700; cursor:pointer;
   transition: transform .08s ease, background .15s ease, border-color .15s ease;

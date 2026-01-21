@@ -1,6 +1,6 @@
 /* MPGB Premier League - simple PWA service worker */
 // Bump cache version whenever you deploy UI/JS fixes so users instantly get latest files.
-const CACHE_NAME = 'mpgb-pl-v3';
+const CACHE_NAME = 'mpgb-pl-v4';
 // Keep precache minimal but correct: a missing file here breaks install.
 const PRECACHE = [
   './',

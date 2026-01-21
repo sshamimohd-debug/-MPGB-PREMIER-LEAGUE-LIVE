@@ -64,6 +64,127 @@ function renderFreeHitBadge(doc){
   badge.style.display = of.freeHit ? "inline-flex" : "none";
 }
 
+
+function _oversTextFromBalls(balls){
+  const o = Math.floor((Number(balls||0))/6);
+  const b = Math.floor((Number(balls||0))%6);
+  return `${o}.${b}`;
+}
+
+function _innings2Started(doc){
+  const st = doc?.state || {};
+  const i1 = st?.innings?.[1];
+  return !!(i1 && (Number(i1.balls||0)>0 || (Array.isArray(i1.ballByBall) && i1.ballByBall.length>0)));
+}
+
+function maybeShowInningsBreak(doc){
+  try{
+    const st = doc?.state || {};
+    if(Number(st.inningsIndex||0) !== 1) return;
+    if(_innings2Started(doc)) return;
+
+    const i0 = st?.innings?.[0];
+    const i1 = st?.innings?.[1] || {};
+    if(!i0) return;
+
+    // Only show if innings 1 has actually finished (overs/all out)
+    const oversLimit = Number(st.oversPerInnings||10);
+    const maxBalls = oversLimit * 6;
+    const innings1Done = Number(i0.wkts||0) >= 10 || Number(i0.balls||0) >= maxBalls;
+    if(!innings1Done) return;
+
+    // If modal already open, keep it
+    if(document.getElementById("inningsBreakOverlay")) return;
+
+    const target = Number(i0.runs||0) + 1;
+    const bat2 = i1.batting || st.summary?.batting || doc?.b;
+    const bowl2 = i1.bowling || st.summary?.bowling || doc?.a;
+    const batXI = st.playingXI?.[bat2] || [];
+    const bowlXI = st.playingXI?.[bowl2] || [];
+
+    const overlay = document.createElement("div");
+    overlay.id = "inningsBreakOverlay";
+    overlay.className = "overlay";
+    overlay.innerHTML = `
+      <div class="popup" style="max-width:640px">
+        <div class="row" style="justify-content:space-between; gap:12px; align-items:center">
+          <div>
+            <div class="h1" style="font-size:18px">Innings Break</div>
+            <div class="muted small" style="margin-top:2px">
+              1st Innings: <b>${esc(i0.batting||doc?.a)}</b> ${esc(Number(i0.runs||0))}/${esc(Number(i0.wkts||0))} (${esc(_oversTextFromBalls(i0.balls))}/${esc(oversLimit)})
+              • Target: <b>${esc(target)}</b>
+            </div>
+          </div>
+          <span class="badge live">LIVE</span>
+        </div>
+
+        <hr class="sep"/>
+
+        <div class="muted small" style="margin-bottom:8px">2nd Innings setup: <b>${esc(bat2)}</b> chasing • <b>${esc(bowl2)}</b> bowling</div>
+
+        <div class="grid" style="grid-template-columns: 1fr; gap:10px">
+          <div>
+            <div class="muted small" style="margin:0 0 4px">Striker</div>
+            <select class="input" id="ibStriker">
+              ${batXI.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <div class="muted small" style="margin:0 0 4px">Non-Striker</div>
+            <select class="input" id="ibNonStriker">
+              ${batXI.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <div class="muted small" style="margin:0 0 4px">Opening Bowler</div>
+            <select class="input" id="ibBowler">
+              ${bowlXI.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="justify-content:flex-end; gap:10px; margin-top:12px">
+          <button class="btn" id="ibStart">Start 2nd Innings</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const $s = (id)=>overlay.querySelector(id);
+    const strikerEl = overlay.querySelector("#ibStriker");
+    const nonEl = overlay.querySelector("#ibNonStriker");
+    const bowlEl = overlay.querySelector("#ibBowler");
+
+    // Make default non-striker different if possible
+    if(nonEl && strikerEl && nonEl.value === strikerEl.value && nonEl.options.length>1){
+      nonEl.selectedIndex = 1;
+    }
+
+    overlay.querySelector("#ibStart")?.addEventListener("click", async ()=>{
+      const s = (strikerEl?.value||"").trim();
+      const ns = (nonEl?.value||"").trim();
+      const bo = (bowlEl?.value||"").trim();
+      if(!s || !ns || !bo){
+        showState("2nd innings setup: select striker, non-striker aur bowler.", false);
+        return;
+      }
+      if(s===ns){
+        showState("Striker aur Non-striker same nahi ho sakte.", false);
+        return;
+      }
+      try{
+        await setOpeningSetup(FB, matchId, s, ns, bo);
+        overlay.remove();
+        showState("2nd innings started. Scoring shuru karo.", true);
+      } catch(err){
+        showState(err?.message || "2nd innings setup failed", false);
+      }
+    });
+  } catch(e){
+    // no-op
+  }
+}
+
 function showAwardsPopup(awards){
   if(!awards) return;
   const mom = awards.mom;
@@ -1198,6 +1319,7 @@ function render(doc){
   // Cricbuzz-style live chip for scorer
   renderScorerLiveChip(doc);
   renderFreeHitBadge(doc);
+  maybeShowInningsBreak(doc);
 
   const inn = currentInnings(doc);
   const of = inn?.onField;

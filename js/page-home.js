@@ -159,10 +159,30 @@ function renderFromMatches(t, docs){
 
   const scoreLine = (m)=>{
     const sum = m.summary || {};
-    const batting = sum.batting || m.battingFirst || m.a;
-    const scoreText = sum.scoreText || "0/0";
-    const oversText = sum.oversText || `0.0/${t.oversPerInnings||10}`;
-    const rr = (sum.rr!=null) ? fmtRR(sum.rr) : null;
+    const st = m.state || {};
+    const innings = Array.isArray(st.innings) ? st.innings : [];
+    const i0 = innings[0] || null;
+    const i1 = innings[1] || null;
+    const idx = Number(st.inningsIndex ?? sum.inningsIndex ?? 0);
+
+    // If innings 2 is selected but hasn't started, keep showing innings 1 final score
+    const i1Started = !!(i1 && (Number(i1.balls||0)>0 || (Array.isArray(i1.ballByBall) && i1.ballByBall.length>0)));
+
+    let batting = sum.batting || m.battingFirst || m.a;
+    let scoreText = sum.scoreText || "0/0";
+    let oversText = sum.oversText || `0.0/${t.oversPerInnings||10}`;
+    let rrVal = (sum.rr!=null) ? sum.rr : null;
+
+    if(idx===1 && !i1Started && i0){
+      batting = i0.batting || batting;
+      scoreText = `${Number(i0.runs||0)}/${Number(i0.wkts||0)}`;
+      const o = Math.floor((Number(i0.balls||0))/6);
+      const b = Math.floor((Number(i0.balls||0))%6);
+      oversText = `${o}.${b}/${t.oversPerInnings||10}`;
+      rrVal = (Number(i0.balls||0)>0) ? ((Number(i0.runs||0)*6)/Number(i0.balls||0)) : 0;
+    }
+
+    const rr = (rrVal!=null) ? fmtRR(rrVal) : null;
     const rrTxt = rr ? ` • RR ${rr}` : "";
     return `${esc(batting)}: <b>${esc(scoreText)}</b> <span class="muted">(${esc(oversText)})</span>${rrTxt}`;
   };
