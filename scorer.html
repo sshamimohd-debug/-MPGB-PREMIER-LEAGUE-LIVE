@@ -246,104 +246,17 @@
   <div class="wizCard">
     <div class="wizTop">
       <div class="wizTitle" id="wizTitle">Match Setup</div>
-      <div class="wizStep" id="wizStep">Step 1/6</div>
+      <div class="wizStep" id="wizStep">Step</div>
     </div>
 
-    <div class="wizBody">
-      <section class="wizPane" data-pane="toss">
-        <div class="tossBar">
-          <div class="tossBarLeft">←</div>
-          <div class="tossBarTitle">Toss</div>
-          <div class="tossBarRight">📷</div>
-        </div>
+    <div class="wizDots" id="wizDots"></div>
 
-        <div class="tossBody">
-          <div class="tossQ">Who won the toss?</div>
-          <div class="tossGrid2">
-            <button class="tossCard" data-pick="tossTeamA" id="btnTossA">
-              <div class="tossLogo">A</div>
-              <div class="tossName">Team A</div>
-            </button>
-            <button class="tossCard" data-pick="tossTeamB" id="btnTossB">
-              <div class="tossLogo">B</div>
-              <div class="tossName">Team B</div>
-            </button>
-          </div>
+    <!-- ONE SCREEN AT A TIME: JS will render current step here -->
+    <div class="wizHost" id="wizHost"></div>
 
-          <div class="tossQ" style="margin-top:14px">Winner of the toss elected to?</div>
-          <div class="tossGrid2">
-            <button class="tossCard" data-pick="bat">
-              <div class="tossIcon">🏏</div>
-              <div class="tossName">Bat</div>
-            </button>
-            <button class="tossCard" data-pick="bowl">
-              <div class="tossIcon">🎯</div>
-              <div class="tossName">Bowl</div>
-            </button>
-          </div>
-
-          <div class="tossHint">Tap the coin to flip</div>
-          <div class="tossCoin" aria-hidden="true">🪙</div>
-
-          <div class="tossBottom">
-            <div class="tossHelp">Need help?</div>
-            <div class="tossLets">Let's play</div>
-          </div>
-        </div>
-      </section>
-<section class="wizPane hidden" data-pane="xi">
-  <div class="wizH">Playing XI</div>
-  <div class="wizP">Team A aur Team B me se 15-15 players me se 11-11 select karo.</div>
-
-  <div class="segTabs" style="margin-top:10px">
-    <button type="button" class="segTab on" id="xiTabA">Team A</button>
-    <button type="button" class="segTab" id="xiTabB">Team B</button>
-  </div>
-
-  <div class="muted small wizCount" id="xiOverallCount" style="margin-top:8px">Team A: 0/11 • Team B: 0/11</div>
-
-  <div id="xiPaneA" class="xiPane" style="margin-top:10px">
-    <div class="muted small wizCounter" id="xiACount2">0/11 selected</div>
-    <div id="xiAList" class="wizList" style="margin-top:10px"></div>
-  </div>
-
-  <div id="xiPaneB" class="xiPane hidden" style="margin-top:10px">
-    <div class="muted small wizCounter" id="xiBCount2">0/11 selected</div>
-    <div id="xiBList" class="wizList" style="margin-top:10px"></div>
-  </div>
-</section>
-<!-- 2nd innings UX: show an Innings Break screen before asking only opener + bowler -->
-      <section class="wizPane hidden" data-pane="break">
-        <div class="wizH">Innings Break</div>
-        <div class="wizP">1st innings complete. Ab 2nd innings (chase) start karte hain.</div>
-        <div class="wizBreakCard">
-          <div class="wizBreakLine" id="breakSummary">1st Innings: -</div>
-          <div class="wizBreakLine strong" id="breakTarget">Target: -</div>
-          <div class="muted small" id="breakNote" style="margin-top:6px"></div>
-        </div>
-      </section>
-
-      <section class="wizPane hidden" data-pane="opening">
-        <div class="wizH">Opening Setup</div>
-        <div class="wizP">2 openers + opening bowler select karo.</div>
-        <div class="muted small" id="openBattingLabel"></div>
-        <div class="muted small" id="openBowlingLabel" style="margin-top:2px"></div>
-        <div class="wizRow"><label>Striker</label><select id="openStriker"></select></div>
-        <div class="wizRow"><label>Non-striker</label><select id="openNon"></select></div>
-        <div class="wizRow"><label>Opening Bowler</label><select id="openBowler"></select></div>
-      </section>
-
-      <section class="wizPane hidden" data-pane="ready">
-        <div class="wizH">All Set ✅</div>
-        <div class="wizP">Ab innings start kar do.</div>
-        <div class="wizBigOk">🏏 Ready for LIVE scoring</div>
-      </section>
-    </div>
-
-    <div class="wizFooter">
-      <button id="wizBack" class="wizBtn ghost">Back</button>
-      <div class="wizDots" id="wizDots"></div>
-      <button id="wizNext" class="wizBtn primary">Next</button>
+    <div class="wizNav">
+      <button class="btn ghost" id="wizBack" type="button">Back</button>
+      <button class="btn primary" id="wizNext" type="button">Next</button>
     </div>
   </div>
 </div>
