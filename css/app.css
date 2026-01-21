@@ -313,6 +313,7 @@ body.modalOpen{ overflow:hidden; }
   #scorerLiveChip{ min-width: unset !important; width:100%; }
 }
 
+<<<<<<< HEAD
 
 
 /* Toss pane (app-like) */
@@ -330,6 +331,7 @@ body.modalOpen{ overflow:hidden; }
 .tossNote{ margin-top:14px; color: rgba(0,0,0,.55); font-size:12px; }
 /* make toss pane visually light even inside dark wizard */
 .wizCard .tossWrap{ background:#ffffff; border-radius:18px; padding:12px; }
+=======
 /* =========================
    Home: Matches tabs (CREX/Cricbuzz style)
    ========================= */
@@ -427,4 +429,91 @@ body.modalOpen{ overflow:hidden; }
   .mRow{ padding:10px; }
   .mActions{ gap:6px; }
   .mBtn{ height:34px; }
+}
+
+>>>>>>> 572fc886489550220fcbeb79eb46f419aa1fda15
+
+
+/* ===== Scorer Setup Wizard (one-screen-at-a-time) additions ===== */
+.wizMsg{
+  margin:10px 14px 0 14px;
+  padding:10px 12px;
+  border-radius:12px;
+  background: rgba(255,255,255,.08);
+  color:#fff;
+  font-size:13px;
+  line-height:1.25;
+}
+
+.segTabs{
+  display:flex;
+  gap:8px;
+  background: rgba(255,255,255,.08);
+  padding:6px;
+  border-radius:14px;
+}
+.segTab{
+  flex:1;
+  border:0;
+  background: transparent;
+  color: rgba(255,255,255,.78);
+  padding:10px 10px;
+  border-radius:12px;
+  font-weight:700;
+}
+.segTab.on{
+  background: rgba(255,255,255,.16);
+  color:#fff;
+}
+
+.pillCount{
+  min-width:64px;
+  text-align:center;
+  padding:8px 10px;
+  border-radius:999px;
+  background: rgba(255,255,255,.12);
+  color:#fff;
+  font-weight:800;
+}
+
+.xiList{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.xiRow{
+  width:100%;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+  color:#fff;
+  border-radius:14px;
+  padding:12px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.xiRow.on{
+  border-color: rgba(75,180,255,.55);
+  background: rgba(75,180,255,.16);
+}
+.xiName{
+  font-weight:700;
+  font-size:14px;
+}
+.xiTick{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  background: rgba(255,255,255,.10);
+  font-weight:900;
+}
+
+.tossCard.on{
+  border-color: rgba(75,180,255,.60);
+  background: rgba(75,180,255,.16);
 }
