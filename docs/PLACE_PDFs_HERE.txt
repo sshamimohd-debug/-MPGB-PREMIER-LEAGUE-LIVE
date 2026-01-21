@@ -1,3 +1,0 @@
-Place official PDFs in this folder with these names:
-- IOM_02.01.2026_MPGB Premier League.pdf
-- MPGB_Premier_League_Revised_Schedule.pdf
