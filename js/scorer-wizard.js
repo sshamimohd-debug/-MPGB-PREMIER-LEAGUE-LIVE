@@ -1,448 +1,447 @@
 // js/scorer-wizard.js
-// Mobile operator setup wizard for scorer page.
-// Step flow: Toss -> XI (Team A) -> XI (Team B) -> Captain/VC/WK -> Opening -> Ready.
-// This module is UI-only; scoring rules/logic remain unchanged.
+// Full-screen setup wizard (UI-only) for NEW match setup.
+// STRICT: Do NOT change scoring logic / ball-by-ball rules / Firebase schema.
+// Flow (one screen at a time):
+//   1) Playing XI (Team A/Team B tabs; only active team visible)
+//   2) Toss (winner + bat/bowl)
+//   3) Opening (striker/non-striker/opening bowler) – only at innings start
+// After "Start Match": set match status LIVE and close wizard; scorer page continues normally.
 
 const qs = (sel, root=document) => root.querySelector(sel);
 const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-function makeDots(dotsEl, n){
-  dotsEl.innerHTML = "";
-  for(let i=0;i<n;i++){
-    const d = document.createElement("div");
-    d.className = "d" + (i===0 ? " on" : "");
-    dotsEl.appendChild(d);
-  }
+function setHidden(el, hidden){
+  if(!el) return;
+  el.classList.toggle("hidden", !!hidden);
 }
 
-function setDots(dotsEl, idx){
-  const dots = qsa(".d", dotsEl);
-  dots.forEach((d,i)=> d.classList.toggle("on", i===idx));
+function setActivePane(root, paneName){
+  qsa(".wizPane", root).forEach(p=>{
+    const name = p.getAttribute("data-pane");
+    setHidden(p, name !== paneName);
+  });
 }
 
-function showPane(wiz, paneName){
-  qsa(".wizPane", wiz).forEach(p=> p.classList.add("hidden"));
-  const el = qs(`.wizPane[data-pane="${paneName}"]`, wiz);
-  if(el) el.classList.remove("hidden");
+function htmlEscape(s){
+  return (s ?? "").toString().replace(/[&<>"']/g, c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
 
-function fillSelect(sel, items, placeholder){
+function uniq(arr){
+  const out=[]; const seen=new Set();
+  (arr||[]).forEach(x=>{
+    const k=(x??"").toString().trim();
+    if(!k || seen.has(k)) return;
+    seen.add(k); out.push(k);
+  });
+  return out;
+}
+
+function fillSelect(sel, items, placeholder="Select..."){
+  if(!sel) return;
+  const val = sel.value;
   sel.innerHTML = "";
   const o0 = document.createElement("option");
   o0.value = "";
-  o0.textContent = placeholder || "Select...";
+  o0.textContent = placeholder;
   sel.appendChild(o0);
-  items.forEach(x=>{
+  (items||[]).forEach(n=>{
     const o = document.createElement("option");
-    o.value = x;
-    o.textContent = x;
+    o.value = n;
+    o.textContent = n;
     sel.appendChild(o);
   });
+  // try restore
+  if(items && items.includes(val)) sel.value = val;
 }
 
-function renderXI(listEl, squad, selected){
+function renderXIList(listEl, squad, selectedSet){
+  if(!listEl) return;
   listEl.innerHTML = "";
-  squad.forEach(p=>{
-    const pill = document.createElement("div");
-    pill.className = "wizPill" + (selected.has(p) ? " on" : "");
-    pill.textContent = p;
-    pill.addEventListener("click", ()=>{
-      if(selected.has(p)) selected.delete(p);
-      else {
-        if(selected.size >= 11) return;
-        selected.add(p);
-      }
-      renderXI(listEl, squad, selected);
-      const cap = qs(".wizCounter", listEl.parentElement);
-      if(cap) cap.textContent = `${selected.size}/11 selected`;
-    });
-    listEl.appendChild(pill);
+  (squad||[]).forEach(name=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "wizPill" + (selectedSet.has(name) ? " sel" : "");
+    b.setAttribute("data-player", name);
+    b.innerHTML = `<span class="dot"></span><span class="t">${htmlEscape(name)}</span>`;
+    listEl.appendChild(b);
   });
 }
 
-function guessBatBowl(doc){
-  const st = doc?.state || {};
-  const inn0 = st?.innings?.[0];
-  const batting = inn0?.batting || doc?.battingFirst || doc?.a;
-  const bowling = inn0?.bowling || doc?.bowlingFirst || doc?.b;
-  return { batting, bowling };
-}
-
-function oversTextFromLegalBalls(lb){
-  const n = Number(lb||0);
-  const o = Math.floor(n/6);
-  const b = n%6;
-  return `${o}.${b}`;
-}
-
-function hasMatchSetup(st, a, b){
-  const hasToss = !!(st?.toss || st?.tossWinner);
-  const hasXI = !!(st?.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
-  const mA = st?.playingXIMeta?.[a] || {};
-  const mB = st?.playingXIMeta?.[b] || {};
-  const hasLeaders = !!(mA.captainId && mA.viceCaptainId && mA.wicketKeeperId && mB.captainId && mB.viceCaptainId && mB.wicketKeeperId);
-  return { hasToss, hasXI, hasLeaders };
+function normalizeStatus(s){
+  return (s||"").toString().trim().toUpperCase();
 }
 
 export function initScorerWizard(opts){
-  const {
-    FB,
-    matchId,
-    getDoc,
-    getTournament,
-    setToss,
-    setPlayingXI,
-    setOpeningSetup,
-    setMatchStatus,
-    onDone
-  } = opts;
+  const root = document.getElementById("setupWizard");
+  if(!root) return null;
 
-  const wiz = qs("#setupWizard");
-  if(!wiz) return null;
+  const card = qs(".wizCard", root);
+  const titleEl = qs("#wizTitle", root);
+  const stepEl  = qs("#wizStep", root);
+  const dotsEl  = qs("#wizDots", root);
+  const btnBack = qs("#wizBack", root);
+  const btnNext = qs("#wizNext", root);
 
-  // Panes are dynamic:
-  // - Full setup for 1st innings or incomplete match setup
-  // - Short flow for 2nd innings: Innings Break -> Opening -> Ready
-  let panes = ["xiA","xiB","toss","opening","ready"];
-  let step = 0;
+  // panes in scorer.html
+  const paneXI_A = qs('[data-pane="xiA"]', root);
+  const paneXI_B = qs('[data-pane="xiB"]', root);
+  const paneToss = qs('[data-pane="toss"]', root);
+  const paneOpen = qs('[data-pane="opening"]', root);
+  const paneLeaders = qs('[data-pane="leaders"]', root);
+  const paneBreak = qs('[data-pane="break"]', root);
+  const paneReady = qs('[data-pane="ready"]', root);
 
-  const titleEl = qs("#wizTitle", wiz);
-  const stepEl  = qs("#wizStep", wiz);
-  const dotsEl  = qs("#wizDots", wiz);
-  const btnBack = qs("#wizBack", wiz);
-  const btnNext = qs("#wizNext", wiz);
+  // hard-disable unused panes (user requested remove captain/vc/wk etc.)
+  setHidden(paneLeaders, true);
+  setHidden(paneBreak, true);
+  setHidden(paneReady, true);
 
-  // Innings break pane (optional)
-  const breakSummaryEl = qs("#breakSummary", wiz);
-  const breakTargetEl  = qs("#breakTarget", wiz);
-  const breakNoteEl    = qs("#breakNote", wiz);
+  // state
+  let step = 1; // 1=XI, 2=Toss, 3=Opening
+  let activeTeam = "A"; // tab selection for XI
+  let xiA = new Set();
+  let xiB = new Set();
+  let tossWinner = null; // "A"|"B"
+  let tossChoice = null; // "BAT"|"BOWL"
 
-  const state = {
-    tossWinner: "",
-    tossDecision: "",
-    xiA: new Set(),
-    xiB: new Set(),
-    capA: "", vcA: "", wkA: "",
-    capB: "", vcB: "", wkB: "",
-    openStriker: "", openNon: "", openBowler: ""
-  };
+  // build XI tabs UI (inside xiA pane header area)
+  function ensureXITabs(){
+    if(!paneXI_A || qs(".xiTabs", paneXI_A)) return;
 
-  function fmtOversFromLegalBalls(lb){
-    const n = Number(lb||0);
-    const o = Math.floor(n/6);
-    const b = n%6;
-    return `${o}.${b}`;
+    const tabBar = document.createElement("div");
+    tabBar.className = "xiTabs";
+    tabBar.innerHTML = `
+      <button type="button" class="xiTab" data-team="A">Team A</button>
+      <button type="button" class="xiTab" data-team="B">Team B</button>
+      <div class="xiHint">Select 11 players from each team</div>
+    `;
+    paneXI_A.insertBefore(tabBar, paneXI_A.firstChild);
   }
 
-  function computeHasSetup(doc){
-    const st = doc?.state || {};
-    const a = doc?.a, b = doc?.b;
-    const hasToss = !!(st.toss?.winner && st.toss?.decision);
-    const hasXI = !!(st.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
-    const hasLeaders = !!(
-      st.playingXIMeta?.[a]?.captainId && st.playingXIMeta?.[a]?.viceCaptainId && st.playingXIMeta?.[a]?.wicketKeeperId &&
-      st.playingXIMeta?.[b]?.captainId && st.playingXIMeta?.[b]?.viceCaptainId && st.playingXIMeta?.[b]?.wicketKeeperId
-    );
-    return { hasToss, hasXI, hasLeaders };
+  function syncXITabUI(){
+    ensureXITabs();
+    const tabs = qsa(".xiTab", paneXI_A);
+    tabs.forEach(t=>t.classList.toggle("on", t.getAttribute("data-team")===activeTeam));
+    // show only active team pane
+    setHidden(paneXI_A, activeTeam!=="A");
+    setHidden(paneXI_B, activeTeam!=="B");
   }
 
-  function setFlowForDoc(doc){
-    const st = doc?.state || {};
-    const idx = Number(st?.inningsIndex||0);
-    const { hasToss, hasXI } = computeHasSetup(doc);
+  function updateXICounters(){
+    const cA = qs("#xiACount", root);
+    const cB = qs("#xiBCount", root);
+    if(cA) cA.textContent = `${xiA.size}/11 selected`;
+    if(cB) cB.textContent = `${xiB.size}/11 selected`;
+  }
 
-    // If it's 2nd innings AND match setup is already done, use short flow.
-    if(idx>=1 && hasToss && hasXI){
-      panes = ["xiA","xiB","toss","opening","ready"];
-    } else {
-      panes = ["xiA","xiB","toss","opening","ready"];
+  function canGoNext(){
+    if(step===1) return xiA.size===11 && xiB.size===11;
+    if(step===2) return !!tossWinner && !!tossChoice;
+    if(step===3){
+      const s = qs("#openStriker", root)?.value || "";
+      const n = qs("#openNon", root)?.value || "";
+      const b = qs("#openBowler", root)?.value || "";
+      return !!s && !!n && !!b && s!==n;
     }
-
-    // Rebuild dots whenever flow changes
-    makeDots(dotsEl, panes.length);
+    return false;
   }
 
-  function renderInningsBreak(doc){
-    if(!breakSummaryEl || !breakTargetEl) return;
-    const st = doc?.state || {};
-    const inn0 = st?.innings?.[0] || {};
-    const runs = Number(inn0?.runs||0);
-    const wk = Number(inn0?.wickets||0);
-    const lb = Number(inn0?.legalBalls||inn0?.ballsTotal||0);
-    const ov = fmtOversFromLegalBalls(lb);
-
-    const target = runs + 1;
-
-    // Who is chasing? prefer innings[1].batting if present
-    const inn1 = st?.innings?.[1] || {};
-    const chasing = inn1?.batting || (doc?.a && doc?.b ? (inn0?.batting===doc.a ? doc.b : doc.a) : "");
-
-    breakSummaryEl.textContent = `1st Innings: ${runs}/${wk} (${ov} ov)`;
-    breakTargetEl.textContent = chasing ? `Target for ${chasing}: ${target}` : `Target: ${target}`;
-
-    if(breakNoteEl){
-      breakNoteEl.textContent = "Start 2nd innings ke liye sirf openers aur first bowler select hoga.";
+  function setNextLabel(){
+    if(step===3){
+      btnNext.textContent = "Start Match";
+    }else{
+      btnNext.textContent = "Next";
     }
   }
 
-  function updateHeader(){
-    const pane = panes[step];
-    titleEl.textContent = (pane==="break") ? "Innings Break" : "Match Setup";
-    stepEl.textContent = `Step ${step+1}/${panes.length}`;
-    setDots(dotsEl, step);
-    btnBack.disabled = (step===0);
-    if(pane==="break") btnNext.textContent = "Start 2nd Innings";
-    else btnNext.textContent = (step===panes.length-1) ? "Start" : "Next";
-  }
+  function renderStep(){
+    // IMPORTANT: one screen at a time
+    // Hide all panes first (DOM purge feel)
+    qsa(".wizPane", root).forEach(p=>setHidden(p, true));
 
-  function err(msg){
-    alert(msg);
-  }
-
-  function validate(){
-    const pane = panes[step];
-    if(pane==="toss"){
-      if(!state.tossWinner || !state.tossDecision) return "Toss winner aur decision dono select karo.";
+    // Update header
+    if(titleEl){
+      titleEl.textContent = step===1 ? "Select Playing XI" : (step===2 ? "Toss" : "Opening Setup");
     }
-    if(pane==="xiA"){
-      if(state.xiA.size !== 11) return "Team A ke exactly 11 players select karo.";
+    if(stepEl){
+      stepEl.textContent = `Step ${step}/3`;
     }
-    if(pane==="xiB"){
-      if(state.xiB.size !== 11) return "Team B ke exactly 11 players select karo.";
-    }
-    if(pane==="opening"){
-      if(!state.openStriker || !state.openNon || !state.openBowler) return "Opening me Striker, Non-striker aur Bowler select karo.";
-      if(state.openStriker===state.openNon) return "Striker aur Non-striker same nahi ho sakte.";
-    }
-    return "";
-  }
 
-  function bindTossButtons(doc){
-    const btnA = qs("#btnTossA", wiz);
-    const btnB = qs("#btnTossB", wiz);
-    if(btnA) btnA.textContent = doc?.a || "Team A";
-    if(btnB) btnB.textContent = doc?.b || "Team B";
-
-    // Clear previous selections
-    qsa('.wizPane[data-pane="toss"] .tossCard', wiz).forEach(b=> b.classList.remove("sel"));
-
-    const tossPane = qs('.wizPane[data-pane="toss"]', wiz);
-    if(!tossPane || tossPane.__bound) return;
-    tossPane.__bound = true;
-
-    qsa('.wizPane[data-pane="toss"] .tossCard', wiz).forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const pick = btn.getAttribute("data-pick");
-        if(pick==="tossTeamA") state.tossWinner = doc?.a;
-        if(pick==="tossTeamB") state.tossWinner = doc?.b;
-        if(pick==="bat") state.tossDecision = "BAT";
-        if(pick==="bowl") state.tossDecision = "BOWL";
-
-        // visual selection
-        if(["tossTeamA","tossTeamB"].includes(pick)){
-          // remove sel from the 2 team buttons
-          qsa('[data-pick="tossTeamA"],[data-pick="tossTeamB"]', tossPane).forEach(b=> b.classList.remove("sel"));
-          btn.classList.add("sel");
-        }
-        if(["bat","bowl"].includes(pick)){
-          qsa('[data-pick="bat"],[data-pick="bowl"]', tossPane).forEach(b=> b.classList.remove("sel"));
-          btn.classList.add("sel");
-        }
-      });
-    });
-  }
-
-  function bindSelectState(){
-    ["openStriker","openNon","openBowler"].forEach(id=>{
-      const el = qs("#"+id, wiz);
-      if(!el || el.__bound) return;
-      el.__bound = true;
-      el.addEventListener("change", ()=>{
-        state[id] = el.value;
-      });
-    });
-  }
-
-  function hydrateLists(doc){
-    const t = getTournament();
-    const squads = (t && t.squads) ? t.squads : {};
-    const a = doc?.a;
-    const b = doc?.b;
-
-    const squadA = Array.isArray(squads?.[a]) && squads[a].length ? squads[a] : Array.from({length:15}, (_,i)=>`${a} Player ${i+1}`);
-    const squadB = Array.isArray(squads?.[b]) && squads[b].length ? squads[b] : Array.from({length:15}, (_,i)=>`${b} Player ${i+1}`);
-
-    renderXI(qs("#xiAList", wiz), squadA, state.xiA);
-    renderXI(qs("#xiBList", wiz), squadB, state.xiB);
-
-    // Counter labels
-    const ca = qs("#xiACount", wiz);
-    const cb = qs("#xiBCount", wiz);
-    if(ca) ca.textContent = `${state.xiA.size}/11 selected`;
-    if(cb) cb.textContent = `${state.xiB.size}/11 selected`;
-
-    // Leaders + Opening dropdowns depend on XI
-    const xiA = Array.from(state.xiA);
-    const xiB = Array.from(state.xiB);
-
-    fillSelect(qs("#capA", wiz), xiA, "Captain");
-    fillSelect(qs("#vcA",  wiz), xiA, "Vice Captain");
-    fillSelect(qs("#wkA",  wiz), xiA, "Wicket Keeper");
-
-    fillSelect(qs("#capB", wiz), xiB, "Captain");
-    fillSelect(qs("#vcB",  wiz), xiB, "Vice Captain");
-    fillSelect(qs("#wkB",  wiz), xiB, "Wicket Keeper");
-
-    // Opening: use current innings batting/bowling after toss is saved
-    const { batting, bowling } = guessBatBowl(doc);
-    const batXI = (batting===a) ? xiA : xiB;
-    const bowlXI = (bowling===a) ? xiA : xiB;
-
-    fillSelect(qs("#openStriker", wiz), batXI, `Striker (${batting})`);
-    fillSelect(qs("#openNon",    wiz), batXI, `Non-striker (${batting})`);
-    fillSelect(qs("#openBowler", wiz), bowlXI, `Opening bowler (${bowling})`);
-  }
-
-  async function persistCurrent(doc){
-    const pane = panes[step];
-    if(pane==="break"){
-      // UI-only pane; do not persist anything.
-      return;
-    }
-    if(pane==="toss"){
-      await setToss(FB, matchId, state.tossWinner, state.tossDecision);
-    }
-    if(pane==="xiA" || pane==="xiB"){
-      await setPlayingXI(FB, matchId, Array.from(state.xiA), Array.from(state.xiB), null, null);
-    }
-    if(pane==="opening"){
-      await setOpeningSetup(FB, matchId, state.openStriker, state.openNon, state.openBowler);
-      // Mark match as LIVE after opening setup so scoring UI renders for new matches
-      if(typeof setMatchStatus === "function"){
-        try{ await setMatchStatus(FB, matchId, "LIVE"); }catch(e){}
+    // Dots
+    if(dotsEl){
+      dotsEl.innerHTML = "";
+      for(let i=1;i<=3;i++){
+        const d=document.createElement("div");
+        d.className="d" + (i===step ? " on" : "");
+        dotsEl.appendChild(d);
       }
     }
+
+    // Back
+    btnBack.disabled = (step===1);
+
+    // Next label + enable
+    setNextLabel();
+    btnNext.disabled = !canGoNext();
+
+    if(step===1){
+      // Show XI pane with tabs controlling A/B
+      activeTeam = activeTeam || "A";
+      // show relevant pane
+      syncXITabUI();
+      // ensure lists rendered
+      const squads = (typeof opts.getSquads==="function" ? opts.getSquads() : {}) || {};
+      const aName = opts.getDoc()?.teamA || "Team A";
+      const bName = opts.getDoc()?.teamB || "Team B";
+      // Update titles
+      const tA = qs("#xiATitle", root); if(tA) tA.textContent = `Playing XI (${aName})`;
+      const tB = qs("#xiBTitle", root); if(tB) tB.textContent = `Playing XI (${bName})`;
+      // Update tab labels
+      const tabA = qs('.xiTab[data-team="A"]', paneXI_A); if(tabA) tabA.textContent = aName;
+      const tabB = qs('.xiTab[data-team="B"]', paneXI_A); if(tabB) tabB.textContent = bName;
+
+      const squadA = uniq(squads?.A || squads?.teamA || squads?.[aName] || []);
+      const squadB = uniq(squads?.B || squads?.teamB || squads?.[bName] || []);
+
+      renderXIList(qs("#xiAList", root), squadA, xiA);
+      renderXIList(qs("#xiBList", root), squadB, xiB);
+      updateXICounters();
+
+      // set visibility correctly (only active team visible)
+      syncXITabUI();
+    }
+    else if(step===2){
+      // Toss pane
+      setHidden(paneToss, false);
+
+      // set team names
+      const aName = opts.getDoc()?.teamA || "Team A";
+      const bName = opts.getDoc()?.teamB || "Team B";
+      const btnA = qs("#btnTossA", root); if(btnA) qs(".tossName", btnA).textContent = aName;
+      const btnB = qs("#btnTossB", root); if(btnB) qs(".tossName", btnB).textContent = bName;
+
+      // Clear / apply selection UI
+      qsa('.tossCard', paneToss).forEach(b=>b.classList.remove("sel"));
+      if(tossWinner==="A") qs("#btnTossA", root)?.classList.add("sel");
+      if(tossWinner==="B") qs("#btnTossB", root)?.classList.add("sel");
+      if(tossChoice==="BAT") qsa('.tossCard[data-pick="bat"]', paneToss).forEach(b=>b.classList.add("sel"));
+      if(tossChoice==="BOWL") qsa('.tossCard[data-pick="bowl"]', paneToss).forEach(b=>b.classList.add("sel"));
+    }
+    else if(step===3){
+      // Opening pane
+      setHidden(paneOpen, false);
+
+      const doc = opts.getDoc() || {};
+      const squads = (typeof opts.getSquads==="function" ? opts.getSquads() : {}) || {};
+      const aName = doc.teamA || "Team A";
+      const bName = doc.teamB || "Team B";
+
+      // Determine batting/bowling based on toss selection (simple, UI-only)
+      const battingTeam = (tossWinner==="A" ? aName : bName);
+      const bowlingTeam = (tossWinner==="A" ? bName : aName);
+      const electedBat = (tossChoice==="BAT");
+      const batFirst = electedBat ? battingTeam : bowlingTeam;
+      const bowlFirst = electedBat ? bowlingTeam : battingTeam;
+
+      const lblBat = qs("#openBattingLabel", root);
+      const lblBowl = qs("#openBowlingLabel", root);
+      if(lblBat) lblBat.textContent = `Batting: ${batFirst}`;
+      if(lblBowl) lblBowl.textContent = `Bowling: ${bowlFirst}`;
+
+      // Opening options must come from PLAYING XI (not full squad)
+      const batXI = (batFirst===aName) ? Array.from(xiA) : Array.from(xiB);
+      const bowlXI = (bowlFirst===aName) ? Array.from(xiA) : Array.from(xiB);
+
+      fillSelect(qs("#openStriker", root), batXI, "Select striker");
+      fillSelect(qs("#openNon", root), batXI, "Select non-striker");
+      fillSelect(qs("#openBowler", root), bowlXI, "Select opening bowler");
+    }
+
+    btnNext.disabled = !canGoNext();
   }
 
   function open(doc){
-    setFlowForDoc(doc);
+    // full-screen overlay on
+    root.classList.remove("hidden");
+    step = 1;
+    activeTeam = "A";
+    xiA = new Set();
+    xiB = new Set();
+    tossWinner = null;
+    tossChoice = null;
 
-    // preload any existing saved values if present
-    const st = doc?.state || {};
-    const a = doc?.a;
-    const b = doc?.b;
-
-    // reset local selection only if not already chosen
-    if(st.toss?.winner) state.tossWinner = st.toss.winner;
-    if(st.toss?.decision) state.tossDecision = (st.toss.decision||"BAT").toUpperCase();
-
-    // XI
-    const xiA = st?.playingXI?.[a];
-    const xiB = st?.playingXI?.[b];
-    if(Array.isArray(xiA) && xiA.length===11){ state.xiA = new Set(xiA); }
-    if(Array.isArray(xiB) && xiB.length===11){ state.xiB = new Set(xiB); }
-
-    // Leaders meta
-    const mA = st?.playingXIMeta?.[a] || {};
-    const mB = st?.playingXIMeta?.[b] || {};
-    state.capA = mA.captainId || state.capA;
-    state.vcA  = mA.viceCaptainId || state.vcA;
-    state.wkA  = mA.wicketKeeperId || state.wkA;
-    state.capB = mB.captainId || state.capB;
-    state.vcB  = mB.viceCaptainId || state.vcB;
-    state.wkB  = mB.wicketKeeperId || state.wkB;
-
-    // Opening (current innings)
-    const idx = Number(st?.inningsIndex||0);
-    const inn = st?.innings?.[idx];
-    const of = inn?.onField || {};
-    state.openStriker = of.striker || state.openStriker;
-    state.openNon     = of.nonStriker || state.openNon;
-    state.openBowler  = of.bowler || state.openBowler;
-
-    bindTossButtons(doc);
-    bindSelectState();
-    hydrateLists(doc);
-
-    // Fill innings break pane summary (if present)
-    if(qs('.wizPane[data-pane="break"]', wiz)){
-      renderInningsBreak(doc);
+    // Try hydrate from existing doc if any
+    const st = (doc && doc.state) ? doc.state : {};
+    const xi = st?.playingXI || st?.xi || null;
+    if(xi?.A) xiA = new Set(uniq(xi.A));
+    if(xi?.B) xiB = new Set(uniq(xi.B));
+    if(st?.toss){
+      const tw = st.toss.winner;
+      const dec = (st.toss.decision||"").toString().toUpperCase();
+      if(tw==="A" || tw===doc.teamA) tossWinner="A";
+      if(tw==="B" || tw===doc.teamB) tossWinner="B";
+      if(dec==="BAT" || dec==="BATTING") tossChoice="BAT";
+      if(dec==="BOWL" || dec==="BOWLING") tossChoice="BOWL";
     }
 
-    step = 0;
-    showPane(wiz, panes[step]);
-    updateHeader();
-    wiz.classList.remove("hidden");
+    renderStep();
   }
 
   function close(){
-    wiz.classList.add("hidden");
+    root.classList.add("hidden");
   }
 
+  // Event delegation
+  root.addEventListener("click", async (ev)=>{
+    const t = ev.target;
+
+    // XI tabs
+    const tab = t.closest?.(".xiTab");
+    if(tab && step===1){
+      activeTeam = tab.getAttribute("data-team")==="B" ? "B" : "A";
+      syncXITabUI();
+      return;
+    }
+
+    // XI player taps
+    const pill = t.closest?.(".wizPill");
+    if(pill && step===1){
+      const name = pill.getAttribute("data-player");
+      if(!name) return;
+      const set = (activeTeam==="A") ? xiA : xiB;
+      if(set.has(name)){
+        set.delete(name);
+      }else{
+        if(set.size>=11) return;
+        set.add(name);
+      }
+      // rerender only active list for speed
+      if(activeTeam==="A"){
+        renderXIList(qs("#xiAList", root), uniq(opts.getSquads()?.A || opts.getSquads()?.teamA || []), xiA);
+      }else{
+        renderXIList(qs("#xiBList", root), uniq(opts.getSquads()?.B || opts.getSquads()?.teamB || []), xiB);
+      }
+      updateXICounters();
+      btnNext.disabled = !canGoNext();
+      return;
+    }
+
+    // Toss picks
+    const tossBtn = t.closest?.(".tossCard");
+    if(tossBtn && step===2){
+      const pick = tossBtn.getAttribute("data-pick") || "";
+      if(pick==="tossTeamA"){ tossWinner="A"; }
+      else if(pick==="tossTeamB"){ tossWinner="B"; }
+      else if(pick==="bat"){ tossChoice="BAT"; }
+      else if(pick==="bowl"){ tossChoice="BOWL"; }
+
+      // visual update
+      qsa('.tossCard', paneToss).forEach(b=>b.classList.remove("sel"));
+      if(tossWinner==="A") qs("#btnTossA", root)?.classList.add("sel");
+      if(tossWinner==="B") qs("#btnTossB", root)?.classList.add("sel");
+      if(tossChoice==="BAT") qsa('.tossCard[data-pick="bat"]', paneToss).forEach(b=>b.classList.add("sel"));
+      if(tossChoice==="BOWL") qsa('.tossCard[data-pick="bowl"]', paneToss).forEach(b=>b.classList.add("sel"));
+
+      btnNext.disabled = !canGoNext();
+      return;
+    }
+  });
+
+  root.addEventListener("change", ()=>{
+    if(step===3){
+      btnNext.disabled = !canGoNext();
+    }
+  });
+
   btnBack.addEventListener("click", ()=>{
-    if(step===0) return;
-    step--;
-    const doc = getDoc();
-    hydrateLists(doc);
-    showPane(wiz, panes[step]);
-    updateHeader();
+    if(step<=1) return;
+    step -= 1;
+    renderStep();
   });
 
   btnNext.addEventListener("click", async ()=>{
-    const msg = validate();
-    if(msg){ err(msg); return; }
+    if(!canGoNext()) return;
 
-    try {
-      const doc = getDoc();
-      await persistCurrent(doc);
+    if(step===1){
+      // persist XI (both teams) then go toss
+      try{
+        await opts.setPlayingXI(opts.FB, opts.matchId, {
+          A: Array.from(xiA),
+          B: Array.from(xiB)
+        });
+      }catch(e){
+        console.error("setPlayingXI failed", e);
+      }
+      step = 2;
+      renderStep();
+      return;
+    }
 
-      if(step < panes.length-1){
-        step++;
-        const doc2 = getDoc();
-        hydrateLists(doc2);
-        showPane(wiz, panes[step]);
-        updateHeader();
-        return;
+    if(step===2){
+      // persist toss then go opening
+      const doc = opts.getDoc() || {};
+      const aName = doc.teamA || "Team A";
+      const bName = doc.teamB || "Team B";
+      const winnerName = (tossWinner==="A") ? aName : bName;
+      const decision = (tossChoice==="BAT") ? "BAT" : "BOWL";
+      try{
+        await opts.setToss(opts.FB, opts.matchId, { winner: winnerName, decision });
+      }catch(e){
+        console.error("setToss failed", e);
+      }
+      step = 3;
+      renderStep();
+      return;
+    }
+
+    if(step===3){
+      // persist opening + set LIVE + close wizard
+      const striker = qs("#openStriker", root).value;
+      const nonStriker = qs("#openNon", root).value;
+      const bowler = qs("#openBowler", root).value;
+
+      try{
+        await opts.setOpeningSetup(opts.FB, opts.matchId, { striker, nonStriker, bowler });
+      }catch(e){
+        console.error("setOpeningSetup failed", e);
       }
 
-      // done
+      // set match LIVE for NEW match so scorer renders (old matches already have state)
+      try{
+        if(typeof opts.setMatchStatus === "function"){
+          await opts.setMatchStatus(opts.FB, opts.matchId, "LIVE");
+        }
+      }catch(e){
+        console.error("setMatchStatus failed", e);
+      }
+
       close();
-      if(onDone) onDone();
-    } catch(e){
-      err(e?.message || "Save failed");
+      try{ opts.onDone && opts.onDone(); }catch(e){}
+      return;
     }
   });
 
   function shouldOpenForDoc(doc){
     const st = doc?.state || {};
-    const a = doc?.a, b = doc?.b;
+    const hasXI = !!(st.playingXI?.A?.length===11 && st.playingXI?.B?.length===11);
     const hasToss = !!(st.toss?.winner && st.toss?.decision);
-    const hasXI = !!(st.playingXI && st.playingXI[a]?.length===11 && st.playingXI[b]?.length===11);
-    const idx = Number(st.inningsIndex||0);
-    const inn = st.innings?.[idx];
-    const inningsStarted = (
-      !!inn?.openingDone ||
-      Number(inn?.ballsTotal||0)>0 ||
-      Number(inn?.legalBalls||0)>0 ||
-      Number(inn?.runs||0)>0 ||
-      (Array.isArray(inn?.ballByBall) && inn.ballByBall.length>0)
-    );
-    const hasOpeners = !!(inn?.onField?.striker && inn?.onField?.nonStriker);
+    const inn0 = st?.innings?.[0] || {};
+    const hasOpeners = !!(inn0?.onField?.striker && inn0?.onField?.nonStriker) || !!(st.opening?.striker && st.opening?.nonStriker);
+    const balls = Number(inn0?.ballsTotal || inn0?.legalBalls || 0);
+    const inningsStarted = balls>0 || Number(inn0?.runs||0)>0;
     const needOpening = (!hasOpeners && !inningsStarted);
-
-    return !hasToss || !hasXI || needOpening;
+    return (!hasXI || !hasToss || needOpening);
   }
 
   return {
-    open,
+    open(doc){ open(doc || opts.getDoc?.()); },
     close,
-    // call on every render
     sync(doc){
-      // if setup incomplete and wizard not open, open
-      const openNow = shouldOpenForDoc(doc);
-      if(openNow && wiz.classList.contains("hidden")) open(doc);
-      // if setup complete and wizard open, close
-      if(!openNow && !wiz.classList.contains("hidden")) close();
+      const need = shouldOpenForDoc(doc);
+      if(need && root.classList.contains("hidden")) open(doc);
+      if(!need && !root.classList.contains("hidden")) close();
     }
   };
 }

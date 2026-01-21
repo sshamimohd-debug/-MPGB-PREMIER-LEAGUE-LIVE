@@ -9,7 +9,8 @@ const USE_SETUP_WIZARD = true; // Use full-screen setup wizard; hide legacy setu
 let WIZARD = null;
 
 const $ = (id)=>document.getElementById(id);
-const esc = (s)=> (s??"").toString().replace(/[&<>"\']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = (s)=> (s??"").toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 const params = qs();
 const matchId = params.get("matchId") || params.get("match") || "A1";
 
