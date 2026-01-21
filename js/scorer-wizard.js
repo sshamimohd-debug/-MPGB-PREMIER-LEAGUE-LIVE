@@ -34,8 +34,12 @@ function isTossReady(doc){
 }
 function isOpeningReady(doc){
   const st = doc?.state || {};
+  const idx = Number(st?.inningsIndex || 0);
+  const inn = st?.innings?.[idx] || {};
+  const of = inn?.onField || {};
+  // Old schema fallback (if present)
   const o = st.opening || {};
-  return !!o.striker && !!o.nonStriker && !!o.bowler;
+  return !!(inn.openingDone || (of.striker && of.nonStriker && of.bowler) || (o.striker && o.nonStriker && o.bowler));
 }
 
 export function initScorerWizard(opts){
@@ -185,16 +189,21 @@ export function initScorerWizard(opts){
       host.innerHTML = `<div class="wizEmpty">Toss पहले complete करें।</div>`;
       return;
     }
+    const idx = Number(st?.inningsIndex || 0);
     const other = (toss.winner===a) ? b : a;
     const battingFirst = (toss.decision==="BAT") ? toss.winner : other;
     const bowlingFirst = (battingFirst===a) ? b : a;
 
-    const batXI = Array.isArray(xi[battingFirst]) ? xi[battingFirst] : [];
-    const bowlXI = Array.isArray(xi[bowlingFirst]) ? xi[bowlingFirst] : [];
+    // For 2nd innings, swap sides (chasing team bats)
+    const batting = (idx>=1) ? bowlingFirst : battingFirst;
+    const bowling = (idx>=1) ? battingFirst : bowlingFirst;
+
+    const batXI = Array.isArray(xi[batting]) ? xi[batting] : [];
+    const bowlXI = Array.isArray(xi[bowling]) ? xi[bowling] : [];
 
     host.innerHTML = `
       <div class="wizSection">
-        <div class="wizHint"><b>${esc(battingFirst)}</b> batting • <b>${esc(bowlingFirst)}</b> bowling</div>
+        <div class="wizHint"><b>${esc(batting)}</b> batting • <b>${esc(bowling)}</b> bowling</div>
         <div class="wizForm">
           <label>Striker</label>
           <select id="opStr">${batXI.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("")}</select>
