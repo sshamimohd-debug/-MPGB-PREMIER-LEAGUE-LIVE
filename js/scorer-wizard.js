@@ -111,6 +111,33 @@ export function initScorerWizard(opts){
   const btnBack = qs("#wizBack", wiz);
   const btnNext = qs("#wizNext", wiz);
 
+  // Robust event delegation (fixes cases where individual click binds are blocked by layout/overlays)
+  wiz.addEventListener("click", (ev)=>{
+    const btn = ev.target.closest("[data-pick]");
+    if(!btn || !wiz.contains(btn)) return;
+    const pick = btn.getAttribute("data-pick");
+    if(!pick) return;
+    // Only handle picks when Toss pane is visible
+    const tossPane = qs('.wizPane[data-pane="toss"]', wiz);
+    if(!tossPane || tossPane.classList.contains("hidden")) return;
+
+    // Update local state
+    if(pick==="tossTeamA") state.tossWinner = getDoc()?.a;
+    if(pick==="tossTeamB") state.tossWinner = getDoc()?.b;
+    if(pick==="bat") state.tossDecision = "BAT";
+    if(pick==="bowl") state.tossDecision = "BOWL";
+
+    // Visual selection
+    if(["tossTeamA","tossTeamB"].includes(pick)){
+      qsa('[data-pick="tossTeamA"],[data-pick="tossTeamB"]', tossPane).forEach(b=> b.classList.remove("sel"));
+      btn.classList.add("sel");
+    }
+    if(["bat","bowl"].includes(pick)){
+      qsa('[data-pick="bat"],[data-pick="bowl"]', tossPane).forEach(b=> b.classList.remove("sel"));
+      btn.classList.add("sel");
+    }
+  }, { passive:true });
+
   // Innings break pane (optional)
   const breakSummaryEl = qs("#breakSummary", wiz);
   const breakTargetEl  = qs("#breakTarget", wiz);
